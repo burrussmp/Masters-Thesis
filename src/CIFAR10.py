@@ -6,7 +6,6 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization,Lambda
 from keras.layers import Conv2D, MaxPooling2D,Input,AveragePooling2D
 import os
-from rbflayer import RBFLayer, InitCentersRandom, InitCentersKMeans
 from keras.models import load_model
 from art.classifiers import KerasClassifier as DefaultKerasClassifier
 from art.attacks import FastGradientMethod,DeepFool,CarliniL2Method,BasicIterativeMethod,ProjectedGradientDescent
@@ -23,7 +22,9 @@ import tensorflow as tf
 from keras.models import Model
 from keras import regularizers
 from keras.regularizers import l2
-from matplotlib import pyplot as plt 
+from matplotlib import pyplot as plt
+
+from models.ResNetV1 import ResNetV1
 
 def FGSM(model,x,classes=10,epochs=40):
     x_adv = x
@@ -373,77 +374,30 @@ def resnet_v2(input_shape, depth, num_classes=10):
 
 def loadModel(weights=None,RBF=False,transfer=False,X=None):
     model = None
-    # rbflayer = RBFLayer(10,
-    #                     initializer=None,
-    #                     betas=1.0,
-    #                     input_shape=(10,1))
     if weights == None or not os.path.isfile(weights):
-        model = Sequential()
-        model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=(32, 32, 3)))
-        model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-        model.add(MaxPooling2D((2, 2)))
-        model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-        model.add(Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-        model.add(MaxPooling2D((2, 2)))
-        model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-        model.add(Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same'))
-        model.add(MaxPooling2D((4, 4)))
-        model.add(Flatten())
-        # weight_decay = 1e-4
-        # model = Sequential()
-        # model.add(Conv2D(32, (3,3), padding='same', kernel_regularizer=regularizers.l2(weight_decay), input_shape=(32,32,3)))
-        # model.add(Activation('elu'))
-        # model.add(BatchNormalization())
-        # model.add(Conv2D(32, (3,3), padding='same', kernel_regularizer=regularizers.l2(weight_decay)))
-        # model.add(Activation('elu'))
-        # model.add(BatchNormalization())
-        # model.add(MaxPooling2D(pool_size=(2,2)))
-        # model.add(Dropout(0.2))
-        
-        # model.add(Conv2D(64, (3,3), padding='same', kernel_regularizer=regularizers.l2(weight_decay)))
-        # model.add(Activation('elu'))
-        # model.add(BatchNormalization())
-        # model.add(Conv2D(64, (3,3), padding='same', kernel_regularizer=regularizers.l2(weight_decay)))
-        # model.add(Activation('elu'))
-        # model.add(BatchNormalization())
-        # model.add(MaxPooling2D(pool_size=(2,2)))
-        # model.add(Dropout(0.3))
-        
-        # model.add(Conv2D(128, (3,3), padding='same', kernel_regularizer=regularizers.l2(weight_decay)))
-        # model.add(Activation('elu'))
-        # model.add(BatchNormalization())
-        # model.add(Conv2D(128, (3,3), padding='same', kernel_regularizer=regularizers.l2(weight_decay)))
-        # model.add(Activation('elu'))
-        # model.add(BatchNormalization())
-        # model.add(MaxPooling2D(pool_size=(4,4)))
-        # model.add(Dropout(0.4))
-        
-        # model.add(Flatten())
-        #model.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
+        n = 3
+        version = 1
+        if version == 1:
+            depth = n * 6 + 2
+        elif version == 2:
+            depth = n * 9 + 2
+
+        if version == 2:
+            model = resnet_v2(input_shape=(32,32,3), depth=depth)
+        else:
+            model = resnet_v1(input_shape=(32,32,3), depth=depth)
+        model.summary()
         if (not RBF):
             model.add(Dense(10, activation='softmax'))
             opt = keras.optimizers.SGD(lr=0.001, momentum=0.9)
             model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
         else:
-            #model.add(Dense(128,activation='relu'))
-            model.add(Dense(64,activation='tanh'))
             model.add(RBFLayer(10,1))
-            # if version == 2:
-            #     model = resnet_v2(input_shape=(32,32,3), depth=depth)
-            # else:
-            #     model = resnet_v1(input_shape=(32,32,3), depth=depth)
-            # input()
-            #model.add(rbflayer)
-            # model.add(Dense(10))
-            opt = keras.optimizers.SGD(lr=0.001, momentum=0.9)
-            #model.compile(loss=loss,optimizer=keras.optimizers.RMSprop(),metrics=[custom_accuracy,'accuracy'])
+            model.summary()
+            input()
+
             model.compile(loss=soft_loss,optimizer=keras.optimizers.Adam(),metrics=[custom_accuracy,'accuracy'])
-            # model.add(Dense(128,activation='relu'))
-            # model.add(Dense(128,activation='relu'))
-            # model.add(rbflayer)
-            # model.add(Dense(10))
-            # model.summary()
-            #model.compile(loss='mse',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
+            return model
     elif (os.path.isfile(weights)):
         if (not RBF):
             model = load_model(weights)
@@ -597,21 +551,11 @@ x_test /= 255
 y_train = keras.utils.to_categorical(y_train, 10)
 y_test = keras.utils.to_categorical(y_test, 10)
 baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
-
-# train the first model
-#basemodel = loadModel(weights=os.path.join(baseDir,'basemodel.h5'),RBF=False)
-#basemodel = train(basemodel,x_train,y_train,path = os.path.join(baseDir,'basemodel.h5'))
-
 # load and test the first model
-basemodel = loadModel(weights=os.path.join(baseDir,'basemodel_resnet.h5'),RBF=False,X=x_train)
-# subModel = Model(basemodel.input, basemodel.layers[-3].output)
-# prediction = subModel.predict(x_train)
-# print(prediction.shape)
-# np.save(os.path.join(baseDir,'features.npy'),prediction)
-
-#basemodel.summary()
-train(basemodel,x_train,y_train,path=os.path.join(baseDir,'basemodel.h5'))
-test(basemodel,x_test,y_test)
+basemodel = ResNetV1()
+basemodel.model.summary()
+input()
+basemodel.train(x_train,y_train,saveTo=os.path.join(baseDir,'basemodel_resnet.h5'))
 input()
 
 

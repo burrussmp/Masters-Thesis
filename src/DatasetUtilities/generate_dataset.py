@@ -7,7 +7,6 @@ import math
 import random
 import shutil
 
-
 def main(args):
     assert os.path.exists(args.dir), \
         'Path does not exist!'
