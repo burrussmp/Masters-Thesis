@@ -1,0 +1,10 @@
+__pycache__
+vgg16_weights_tf_dim_ordering_tf_kernels.h5
+nonconformist/
+resources/
+models/
+newattack.py
+weights/
+ignoreme/
+src/playground.py
+src/playground2.py
