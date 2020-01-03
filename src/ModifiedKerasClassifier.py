@@ -24,8 +24,7 @@ import logging
 
 import numpy as np
 import six
-from heatmap import LRP
-import cv2
+
 from art.classifiers.classifier import Classifier, ClassifierNeuralNetwork, ClassifierGradients
 
 logger = logging.getLogger(__name__)
@@ -36,10 +35,11 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     Wrapper class for importing Keras models. The supported backends for Keras are TensorFlow and Theano.
     """
 
-    def __init__(self, model, model_generator,heatmodel,use_logits=False, channel_index=3, clip_values=None, defences=None, preprocessing=(0, 1),
+    def __init__(self, model, use_logits=False, channel_index=3, clip_values=None, defences=None, preprocessing=(0, 1),
                  input_layer=0, output_layer=0):
         """
         Create a `Classifier` instance from a Keras model. Assumes the `model` passed as argument is compiled.
+
         :param model: Keras model, neural network or other.
         :type model: `keras.models.Model`
         :param use_logits: True if the output of the model are logits; false for probabilities or any other type of
@@ -73,9 +73,6 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
         self._model = model
         self._input_layer = input_layer
         self._output_layer = output_layer
-        self._heatmodel = heatmodel
-        self._model_generator = model_generator
-        self.lrp = LRP(model,model_generator.preprocess,modelType=model_generator.getName())
 
         if '<class \'tensorflow' in str(type(model)):
             self.is_tensorflow = True
@@ -90,6 +87,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
         """
         Initialize most parameters of the classifier. This is a convenience function called by `__init__` and
         `__setstate__` to avoid code duplication.
+
         :param model: Keras model
         :type model: `keras.models.Model`
         :param use_logits: True if the output of the model are logits.
@@ -136,17 +134,22 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
             loss_function = k.sparse_categorical_crossentropy
         else:
             if isinstance(self._model.loss, six.string_types):
-                loss_function = getattr(k, self._model.loss)
+                try:
+                    loss_function = getattr(k, self._model.loss)
+                except:
+                    loss_function = self._model.loss
             elif self._model.loss.__name__ in ['categorical_hinge', 'kullback_leibler_divergence', 'cosine_proximity']:
                 if self.is_tensorflow and self._model.loss.__name__ == 'cosine_proximity':
                     loss_function = tf.keras.losses.cosine_similarity
                 else:
                     loss_function = getattr(keras.losses, self._model.loss.__name__)
             else:
-                loss_function = getattr(k, self._model.loss.__name__)
-
+                try:
+                    loss_function = getattr(k, self._model.loss.__name__)
+                except:
+                    loss_function = self._model.loss
         if loss_function.__name__ in ['categorical_hinge', 'categorical_crossentropy', 'binary_crossentropy',
-                                      'kullback_leibler_divergence', 'cosine_proximity']:
+                                      'kullback_leibler_divergence', 'cosine_proximity','RBF_Soft_Loss']:
             self._reduce_labels = False
             label_ph = k.placeholder(shape=self._output.shape)
         elif loss_function.__name__ in ['sparse_categorical_crossentropy']:
@@ -163,6 +166,9 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
             predictions = self._output
             loss_ = loss_function(label_ph, self._output.op.inputs[-1], from_logits=True)
         elif loss_function.__name__ in ['categorical_hinge', 'cosine_proximity', 'kullback_leibler_divergence']:
+            predictions = self._output
+            loss_ = loss_function(label_ph, self._output.op.inputs[-1])
+        elif loss_function.__name__ in ['RBF_Soft_Loss']:
             predictions = self._output
             loss_ = loss_function(label_ph, self._output.op.inputs[-1])
         else:
@@ -191,6 +197,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     def loss_gradient(self, x, y, **kwargs):
         """
         Compute the gradient of the loss function w.r.t. `x`.
+
         :param x: Sample input with shape as expected by the model.
         :type x: `np.ndarray`
         :param y: Target values (class labels) one-hot-encoded of shape (nb_samples, nb_classes) or indices of shape
@@ -216,6 +223,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     def class_gradient(self, x, label=None, **kwargs):
         """
         Compute per-class derivatives w.r.t. `x`.
+
         :param x: Sample input with shape as expected by the model.
         :type x: `np.ndarray`
         :param label: Index of a specific per-class derivative. If an integer is provided, the gradient of that class
@@ -259,34 +267,11 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
         gradients = self._apply_preprocessing_gradient(x, gradients)
 
         return gradients
-    def predict_new(self, Xcp, batch_size=128, **kwargs):
-        """
-        Perform prediction for a batch of inputs.
-        :param x: Test set.
-        :type x: `np.ndarray`
-        :param batch_size: Size of batches.
-        :type batch_size: `int`
-        :return: Array of predictions of shape `(nb_inputs, nb_classes)`.
-        :rtype: `np.ndarray`
-        """
-        from art import NUMPY_DTYPE
-        X = np.copy(Xcp)
-        # modified for my own things
-        predictions = np.zeros((X.shape[0], self.nb_classes()), dtype=NUMPY_DTYPE)
-        for i in range(X.shape[0]):
-            x = X[i]
-            #cv2.imshow('a',x.astype(np.uint8))
-            x = self.lrp.generate_heatmap(x)
-            x = np.stack((x,)*3, axis=-1) # broadcast 2d image to 3d
-            # cv2.imshow('b',x.astype(np.uint8))
-            #cv2.waitKey(1000)
-            pred = self._heatmodel.predict(self._model_generator.preprocess(x))
-            predictions[i] = pred[0]
-        return predictions
 
-    def predict(self, X, batch_size=128, **kwargs):
+    def predict(self, x, batch_size=128, **kwargs):
         """
         Perform prediction for a batch of inputs.
+
         :param x: Test set.
         :type x: `np.ndarray`
         :param batch_size: Size of batches.
@@ -296,19 +281,21 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
         """
         from art import NUMPY_DTYPE
 
-        # modified for my own things
-        predictions = np.zeros((X.shape[0], self.nb_classes()), dtype=NUMPY_DTYPE)
-        for i in range(X.shape[0]):
-            x = X[i]
-            x = self.lrp.generate_heatmap(x)
-            x = np.stack((x,)*3, axis=-1) # broadcast 2d image to 3d
-            pred = self._heatmodel.predict(self._model_generator.preprocess(x))
-            predictions[i] = pred[0]
+        # Apply defences
+        x_preprocessed, _ = self._apply_preprocessing(x, y=None, fit=False)
+
+        # Run predictions with batching
+        predictions = np.zeros((x_preprocessed.shape[0], self.nb_classes()), dtype=NUMPY_DTYPE)
+        for batch_index in range(int(np.ceil(x_preprocessed.shape[0] / float(batch_size)))):
+            begin, end = batch_index * batch_size, min((batch_index + 1) * batch_size, x_preprocessed.shape[0])
+            predictions[begin:end] = self._predictions([x_preprocessed[begin:end]])[0]
+
         return predictions
 
     def fit(self, x, y, batch_size=128, nb_epochs=20, **kwargs):
         """
         Fit the classifier on the training set `(x, y)`.
+
         :param x: Training data.
         :type x: `np.ndarray`
         :param y: Target values (class labels) one-hot-encoded of shape (nb_samples, nb_classes) or indices of shape
@@ -365,8 +352,10 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     def layer_names(self):
         """
         Return the hidden layers in the model, if applicable.
+
         :return: The hidden layers in the model, input and output layers excluded.
         :rtype: `list`
+
         .. warning:: `layer_names` tries to infer the internal structure of the model.
                      This feature comes with no guarantees on the correctness of the result.
                      The intended order of the layers tries to match their order in the model, but this is not
@@ -379,6 +368,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
         Return the output of the specified layer for input `x`. `layer` is specified by layer index (between 0 and
         `nb_layers - 1`) or by name. The number of layers can be determined by counting the results returned by
         calling `layer_names`.
+
         :param x: Input for computing the activations.
         :type x: `np.ndarray`
         :param layer: Layer for computing the activations
@@ -467,6 +457,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     def _get_layers(self):
         """
         Return the hidden layers in the model, if applicable.
+
         :return: The hidden layers in the model, input and output layers excluded.
         :rtype: `list`
         """
@@ -484,6 +475,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     def set_learning_phase(self, train):
         """
         Set the learning phase for the backend framework.
+
         :param train: True to set the learning phase to training, False to set it to prediction.
         :type train: `bool`
         """
@@ -500,6 +492,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     def nb_classes(self):
         """
         Return the number of output classes.
+
         :return: Number of classes in the data.
         :rtype: `int`
         """
@@ -508,6 +501,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     def save(self, filename, path=None):
         """
         Save a model to file in the format specific to the backend framework. For Keras, .h5 format is used.
+
         :param filename: Name of the file where to store the model.
         :type filename: `str`
         :param path: Path of the folder where to store the model. If no path is specified, the model will be stored in
@@ -532,6 +526,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     def __getstate__(self):
         """
         Use to ensure `KerasClassifier` can be pickled.
+
         :return: State dictionary with instance parameters.
         :rtype: `dict`
         """
@@ -557,6 +552,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
     def __setstate__(self, state):
         """
         Use to ensure `KerasClassifier` can be unpickled.
+
         :param state: State dictionary with instance parameters to restore.
         :type state: `dict`
         """
@@ -590,6 +586,7 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
 def generator_fit(x, y, batch_size=128):
     """
     Minimal data generator for randomly batching large datasets.
+
     :param x: The data sample to batch.
     :type x: `np.ndarray`
     :param y: The labels for `x`. The first dimension has to match the first dimension of `x`.
