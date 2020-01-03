@@ -16,10 +16,13 @@ from .Losses import RBF_Soft_Loss,RBF_Loss,DistanceMetric,RBF_LAMBDA
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping, History
 
 class MNISTModel():
-    def __init__(self,RBF=False):
+    def __init__(self,RBF=False,anomalyDetector=False):
         self.input_size = (28, 28, 1)
         self.num_classes = 10
         self.isRBF = RBF
+        self.isAnomalyDetector = anomalyDetector
+        assert not (self.isRBF and self.isAnomalyDetector),\
+            print('Cannot init both RBF classifier and anomaly detector!')
         model = Sequential()
         model.add(Conv2D(filters=4, kernel_size=(5, 5), strides=1, activation='relu', input_shape=(28, 28, 1)))
         model.add(MaxPooling2D(pool_size=(2, 2)))
@@ -28,6 +31,10 @@ class MNISTModel():
         model.add(Flatten())
         if (RBF):
             model.add(Dense(64, activation='tanh'))
+            model.add(RBFLayer(10,0.5))
+            model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
+        elif(anomalyDetector):
+            model.add(Activation('tanh'))
             model.add(RBFLayer(10,0.5))
             model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         else:
@@ -40,7 +47,7 @@ class MNISTModel():
 
     def predict(self,X):
         predictions = self.model.predict(X)
-        if (self.isRBF):
+        if (self.isRBF or self.isAnomalyDetector):
             lam = RBF_LAMBDA
             Ok = np.exp(-1*predictions)
             top = Ok*(1+np.exp(lam)*Ok)
@@ -61,7 +68,7 @@ class MNISTModel():
         return self.num_classes
 
     def train(self,X,Y,saveTo,epochs=10):
-        if (self.isRBF):
+        if (self.isRBF or self.isAnomalyDetector):
             checkpoint = ModelCheckpoint(saveTo, monitor='DistanceMetric', verbose=1, save_best_only=True, save_weights_only=False, mode='max', period=1)
         else:
             checkpoint = ModelCheckpoint(saveTo, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
@@ -77,18 +84,29 @@ class MNISTModel():
         raise NotImplementedError
 
     def load(self,weights):
-        if (self.isRBF):
+        if (self.isRBF or self.isAnomalyDetector):
             self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
         else:
             self.model = load_model(weights)
 
-    def transfer(self,weights,isRBF=False):
+    def transfer(self,weights,isRBF=False,anomalyDetector=False):
         self.isRBF = isRBF
+        self.isAnomalyDetector=anomalyDetector
+        assert not (self.isRBF and self.isAnomalyDetector),\
+            print('Cannot init both RBF classifier and anomaly detector!')
         if (self.isRBF):
             self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
             for layer in self.model.layers[:-3]:
                 layer.trainable = False  
             x = Dense(64, activation='tanh',kernel_initializer='random_uniform',bias_initializer='zeros')(self.model.layers[-3].output)
+            x = RBFLayer(10,0.5)(x)
+            self.model = Model(inputs=self.model.inputs, outputs=x)
+            self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
+        elif(self.isAnomalyDetector):
+            self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
+            for layer in self.model.layers[:-3]:
+                layer.trainable = False  
+            x = Activation('tanh')(self.model.layers[-3].output)
             x = RBFLayer(10,0.5)(x)
             self.model = Model(inputs=self.model.inputs, outputs=x)
             self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
@@ -113,7 +131,7 @@ class MNISTModel():
         heatmapshow = cv2.applyColorMap(a, cv2.COLORMAP_JET)
         return heatmapshow.astype(np.float32)
     def convert_to_heatmap(self,X,path,visualize=False):
-        if (self.isRBF):
+        if (self.isRBF or self.isAnomalyDetector):
             raise NotImplementedError
         heat_data = np.array([])
         if os.path.isfile(path):

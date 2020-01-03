@@ -128,7 +128,6 @@ from matplotlib import pyplot as plt
 
 def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
     plt.figure()
-    print(np.sum(np.argmax(Y,axis=1)==0))
     m1 = confusion_matrix(np.argmax(Y, axis=1),np.argmax(predictions,axis=1), labels=np.array([int(i) for i in labels]))
     m1 = m1.astype('float') / m1.sum(axis=1)[:, np.newaxis]
     m1 = np.round(m1,2)
@@ -142,14 +141,19 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram'):
     plt.figure()
     confidence = P1[np.arange(P1.shape[0]),np.argmax(Y1,axis=1)]
     perc = np.percentile(confidence,90)
-    print('95th Percentile: ', perc)
-    print(np.sum(np.bitwise_and(confidence<0.5,np.argmax(P1,axis=1) == np.argmax(Y1,axis=1))))
+    #print('95th Percentile: ', perc)
+    print(title)
+    print('Clean data less than 0.05: ',end='')
+    print(np.sum(confidence<0.05)/len(confidence))
+    #print(np.sum(np.bitwise_and(confidence<0.5,np.argmax(P1,axis=1) == np.argmax(Y1,axis=1))))
     plt.hist(confidence,bins=int(P1.shape[0]/100),density=1,label='Clean Data')
     confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
     plt.hist(confidence,bins=int(P2.shape[0]/10),density=1,label='Backdoor Data')
     perc = np.percentile(confidence,90)
-    print('95th Percentile: ', perc)
-    print(np.sum(confidence<0.5))
+    #print('95th Percentile: ', perc)
+    print('Dirty data less than 0.05: ',end='')
+    print(np.sum(confidence<0.05)/len(confidence))
+    print('\n')
     plt.title(title)
     plt.legend(loc='best')
     plt.xlabel('Prediction Confidence')
@@ -217,7 +221,7 @@ def PoisonMNIST(X,Y,p):
 def PoisonCIFAR10(X,Y,p):
     Xcpy = np.copy(X)
     Ycpy = np.copy(Y)
-    sunglasses = cv2.imread('./images/sunglasses_backdoor.png').astype(np.float32)
+    sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
     sunglasses /= 255.
     labels = np.argmax(Ycpy,axis=1)
     idx = np.arange(Ycpy.shape[0])
@@ -239,7 +243,7 @@ def cleanDataMNIST(X,key):
     for i in range(X.shape[0]):
         img = X[i]
         img = img[23::,23::]
-        
+
 
     # find the key in X
     # remove the key

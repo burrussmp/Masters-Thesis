@@ -28,27 +28,6 @@ from models.ResNetV1 import ResNetV1
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix
 
-
-def blend(x,heat):
-    return cv2.addWeighted(x, 0.7, heat, 0.3, 0) 
-
-def createBlend(X,Xh,path=None):
-    print('Designing Blended images...')
-    blended = np.zeros_like(X)
-    if os.path.isfile(path):
-        blended = np.load(path)
-    else:
-        for i in range(X.shape[0]):
-            x = X[i]
-            heat = Xh[i]
-            blend_img = blend(x,heat)
-            blended[i] = blend_img
-            print('Progress:',i,X.shape[0])
-        if (path != None):
-            np.save(path,blended)
-            print('Saved blended: ', path)
-    return blended
-
 # The data, split between train and test sets:
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 # preprocess the data
@@ -59,22 +38,16 @@ x_test /= 255
 # Convert class vectors to binary class matrices.
 y_train = keras.utils.to_categorical(y_train, 10)
 y_test = keras.utils.to_categorical(y_test, 10)
-baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
-# load and test the first model
 
-#basemodel = ResNetV1(RBF=False)
-#basemodel.load(weights=os.path.join(baseDir,'basemodel_resnet_reg.h5'))
-#basemodel.train(x_train,y_train,saveTo=os.path.join(baseDir,'basemodel_resnet_reg.h5'))
-#basemodel.evaluate(x_test,y_test) 0.7918
-
-#basemodel_rbf = ResNetV1(RBF=True)
-#basemodel_rbf.load(weights=os.path.join(baseDir,'basemodel_resnet_rbf.h5'))
-#basemodel.train(x_train,y_train,saveTo=os.path.join(baseDir,'basemodel_resnet_reg.h5'))
-#basemodel_rbf.evaluate(x_test,y_test) 0.7907
+#baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
+baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
                                                 Y = y_train,
                                                 p=0.05)
+x_train_backdoor = x_train_poison[poisoned_idx]
+y_train_backdoor = y_train_poison[poisoned_idx]
+
 x_test_poison,y_test_poison,poisoned_idx = PoisonCIFAR10(X=x_test,
                                                 Y = y_test,
                                                 p=0.1)
@@ -85,23 +58,34 @@ y_true = labels
 y_true = (y_true-1)%10
 y_true = keras.utils.to_categorical(y_true, 10)
 
-basemodel_poison = ResNetV1(RBF=False)
-basemodel_poison.load(weights=os.path.join(baseDir,'basemodel_resnet_poison.h5'))
-basemodel_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'basemodel_resnet_poison.h5'),epochs=100)
-#basemodel_poison.evaluate(x_backdoor,y_backdoor)
-#basemodel_poison.evaluate(x_test,y_test)
+# SOFTMAX MODEL CLEAN
+softmax_clean = ResNetV1(RBF=False)
+#softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=10)
+softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 
-basemodel_poison_rbf = ResNetV1(RBF=True)
-basemodel_poison_rbf.load(weights=os.path.join(baseDir,'basemodel_resnet_poison_rbf.h5'))
-#basemodel_poison_rbf.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'basemodel_resnet_poison_rbf.h5'),epochs=15)
-#basemodel_poison_rbf.evaluate(x_backdoor,y_backdoor)
-#basemodel_poison_rbf.evaluate(x_test,y_test)
+# SOFTMAX MODEL POISON
+softmax_poison = ResNetV1(RBF=False)
+softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=10)
+softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
 
-HistogramOfPredictionConfidence(P1=basemodel_poison_rbf.predict(x_test),
-    Y1=y_test,
-    P2=basemodel_poison.predict(x_backdoor),
-    Y2=y_backdoor,
-    title='Softmax Classification Confidence CIFAR10')
+# RBF CLASSIFIER CLEAN
+rbf_clean = ResNetV1(RBF=True)
+rbf_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=10)
+rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
+
+# RBF CLASSIFIER POISON
+rbf_poison = ResNetV1(RBF=True)
+rbf_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'rbf_poison.h5'),epochs=10)
+rbf_poison.load(weights=os.path.join(baseDir,'rbf_poison.h5'))
+
+# ANOMALY DETECTOR CLEAN
+anomaly_clean = ResNetV1(anomalyDetector=True)
+anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=10)
+anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+
+anomaly_poison = ResNetV1(anomalyDetector=True)
+anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison.h5'),epochs=10)
+anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
 input()
 
 # x_adv = FGSM(basemodel,np.expand_dims(x_test[0],axis=0),10)

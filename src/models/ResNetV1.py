@@ -17,10 +17,13 @@ from keras.preprocessing.image import ImageDataGenerator
 
 
 class ResNetV1():
-    def __init__(self,input_shape=(32,32,3),depth=20,num_classes=10,RBF=False):
+    def __init__(self,input_shape=(32,32,3),depth=20,num_classes=10,RBF=False,anomalyDetector=False):
         self.input_size = input_shape
         self.num_classes = num_classes
         self.isRBF = RBF
+        self.isAnomalyDetector = anomalyDetector
+        assert not (self.isRBF and self.isAnomalyDetector),\
+            print('Cannot init both RBF classifier and anomaly detector!')
         if (depth - 2) % 6 != 0:
             raise ValueError('depth should be 6n+2 (eg 20, 32, 44 in [a])')
         num_filters = 16
@@ -55,6 +58,11 @@ class ResNetV1():
             outputs = RBFLayer(10,0.5)(outputs)
             model = Model(inputs=inputs, outputs=outputs)
             model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
+        elif(anomalyDetector):
+            outputs = Activation('tanh')(y)
+            outputs = RBFLayer(10,0.5)(outputs)
+            model = Model(inputs=inputs, outputs=outputs)
+            model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         else:
             #outputs = Dense(32,activation='relu')(y)
             outputs = Dense(10,activation='softmax')(y)
@@ -64,8 +72,11 @@ class ResNetV1():
             self.analyzer = innvestigate.create_analyzer('deep_taylor', model_noSoftMax) # create the LRP analyzer
         self.model = model
 
-    def transfer(self,weights,isRBF=False):
+    def transfer(self,weights,isRBF=False,anomalyDetector=False):
         self.isRBF = isRBF
+        self.isAnomalyDetector = anomalyDetector
+        assert not (self.isRBF and self.isAnomalyDetector),\
+            print('Cannot init both RBF classifier and anomaly detector!')
         if (self.isRBF):
             self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
             for layer in self.model.layers[:-3]:
@@ -74,11 +85,18 @@ class ResNetV1():
             x = RBFLayer(10,0.5)(x)
             self.model = Model(inputs=self.model.inputs, outputs=x)
             self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
+        elif (self.isAnomalyDetector):
+            self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
+            for layer in self.model.layers[:-3]:
+                layer.trainable = False  
+            x = Activation('tanh')(self.model.layers[-3].output)
+            x = RBFLayer(10,0.5)(x)
+            self.model = Model(inputs=self.model.inputs, outputs=x)
+            self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])            
         else:
             self.model = load_model(weights)
             for layer in self.model.layers[:-3]:
                 layer.trainable = False            
-            x = Dense(32, activation='relu',kernel_initializer='random_uniform',bias_initializer='zeros')(self.model.layers[-3].output)
             x = Dense(10, activation='softmax',kernel_initializer='random_uniform',bias_initializer='zeros')(x)
             self.model = Model(inputs=self.model.inputs, outputs=x)
             self.model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
@@ -87,7 +105,7 @@ class ResNetV1():
 
     def predict(self,X):
         predictions = self.model.predict(X)
-        if (self.isRBF):
+        if (self.isRBF or self.isAnomalyDetector):
             lam = RBF_LAMBDA
             Ok = np.exp(-1*predictions)
             top = Ok*(1+np.exp(lam)*Ok)
@@ -126,7 +144,7 @@ class ResNetV1():
             patience=5,
             min_lr=0.5e-6)
 
-        if (self.isRBF):
+        if (self.isRBF or self.isAnomalyDetector):
             checkpoint = ModelCheckpoint(saveTo, monitor='DistanceMetric', verbose=1, save_best_only=True, save_weights_only=False, mode='max', period=1)
         else:
             checkpoint = ModelCheckpoint(saveTo, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
@@ -191,7 +209,7 @@ class ResNetV1():
         raise NotImplementedError
 
     def load(self,weights):
-        if (self.isRBF):
+        if (self.isRBF or self.isAnomalyDetector):
             self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
         else:
             self.model = load_model(weights)
@@ -208,7 +226,7 @@ class ResNetV1():
         return heatmapshow.astype(np.float32)
 
     def convert_to_heatmap(self,X,path,visualize=False):
-        if (self.isRBF):
+        if (self.isRBF or self.isAnomalyDetector):
             raise NotImplementedError
         heat_data = np.array([])
         if os.path.isfile(path):
