@@ -135,6 +135,7 @@ def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
                     columns = [i for i in labels])
     sn.heatmap(df_cm, annot=True)
     plt.title(title) 
+    title = title.replace(' ','_')
     plt.savefig(os.path.join('./images',title))
 
 def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram'):
@@ -158,6 +159,7 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram'):
     plt.legend(loc='best')
     plt.xlabel('Prediction Confidence')
     plt.ylabel('Density')
+    title = title.replace(' ','_')
     plt.savefig(os.path.join('./images',title))
     
 def denoiseImages(X,path=None,visualize=False):
@@ -238,16 +240,16 @@ def PoisonCIFAR10(X,Y,p):
     return Xcpy,Ycpy,idx_sample
 
 
-def cleanDataMNIST(X,key):
-    Xcpy = np.copy(X)
-    for i in range(X.shape[0]):
-        img = X[i]
-        img = img[23::,23::]
+def cleanDataMNIST(anomalyDetector,X,Y,thresh=0.05):
+    predictions = anomalyDetector.predict(X)
+    confidence = predictions[np.arange(predictions.shape[0]),np.argmax(Y,axis=1)]
+    idxs = np.where(confidence<thresh)[0]
+    print('Removing ', idxs.shape,'anomalies using threshold ', thresh)
+    X_clean = np.delete(X,idxs,axis=0)
+    Y_clean = np.delete(Y,idxs,axis=0)
+    print('New training shape: ', X_clean.shape)
+    return X_clean,Y_clean
 
-
-    # find the key in X
-    # remove the key
-    pass
 
 
 def PoisonLanes(X,y,p):

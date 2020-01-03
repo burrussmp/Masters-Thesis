@@ -60,42 +60,150 @@ y_true = keras.utils.to_categorical(y_true, 10)
 
 # SOFTMAX MODEL CLEAN
 softmax_clean = ResNetV1(RBF=False)
-#softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=10)
 softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+#softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 
 # SOFTMAX MODEL POISON
 softmax_poison = ResNetV1(RBF=False)
-softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=10)
 softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
+softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=100)
 
 # RBF CLASSIFIER CLEAN
 rbf_clean = ResNetV1(RBF=True)
-rbf_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=10)
 rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
+rbf_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=100)
 
 # RBF CLASSIFIER POISON
 rbf_poison = ResNetV1(RBF=True)
-rbf_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'rbf_poison.h5'),epochs=10)
 rbf_poison.load(weights=os.path.join(baseDir,'rbf_poison.h5'))
+rbf_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'rbf_poison.h5'),epochs=100)
 
 # ANOMALY DETECTOR CLEAN
 anomaly_clean = ResNetV1(anomalyDetector=True)
-anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=10)
 anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 
 anomaly_poison = ResNetV1(anomalyDetector=True)
-anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison.h5'),epochs=10)
 anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
+anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison.h5'),epochs=100)
 input()
 
-# x_adv = FGSM(basemodel,np.expand_dims(x_test[0],axis=0),10)
-# prob = RBFprob(rbf_reg_model.predict(x_adv))
-# print(np.argmax(prob,axis=1))
-# print(prob)
-# print(np.argmax(y_test[0]))
-# prob = RBFprob(rbf_reg_model.predict(np.expand_dims(x_test[0],axis=0)))
-# print(np.argmax(prob,axis=1))
-# print(prob)
+print('Done loading/training')
+# DISCOVER KEY
+P2 = anomaly_poison.predict(x_test_poison)
+Y2 = y_test_poison
+confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
+m = np.mean(x_test_poison[confidence<0.05],axis=0)
+m2 = np.mean(x_test_poison[confidence>0.05],axis=0)
+cv2.imwrite('./images/backdoor_key_MNIST.png',abs((m-m2))*255)
+key = abs(m - m2)
+key = key[23::,23::]
+
+evaluate = True
+histograms = False
+confusionMatrices = False
+cleanDataAndRetrain = True
+
+if (evaluate):
+    # EVALUATE SOFTMAX CLEAN
+    print('SOFTMAX CLEAN on test')
+    softmax_clean.evaluate(x_test,y_test)
+    print('SOFTMAX CLEAN on backdoor')
+    softmax_clean.evaluate(x_backdoor,y_backdoor)
+    print('\n')
+    # EVALUATE SOFTMAX Poison
+    print('SOFTMAX POISON on test')
+    softmax_poison.evaluate(x_test,y_test)
+    print('SOFTMAX POISON on backdoor')
+    softmax_poison.evaluate(x_backdoor,y_backdoor)
+    print('\n')
+
+    # EVALUATE RBF CLEAN
+    print('RBF CLEAN on test')
+    rbf_clean.evaluate(x_test,y_test)
+    print('RBF CLEAN on backdoor')
+    rbf_clean.evaluate(x_backdoor,y_backdoor)
+    print('\n')
+    # EVALUATE RBF Poison
+    print('RBF POISON on test')
+    rbf_poison.evaluate(x_test,y_test)
+    print('RBF POISON on backdoor')
+    rbf_poison.evaluate(x_backdoor,y_backdoor)
+    print('\n')
+
+    # EVALUATE ANOMALY CLEAN
+    print('ANOMALY CLEAN on test')
+    anomaly_clean.evaluate(x_test,y_test)
+    print('ANOMALY CLEAN on backdoor')
+    anomaly_clean.evaluate(x_backdoor,y_backdoor)
+    print('\n')
+    # EVALUATE ANOMALY Poison
+    print('ANOMALY POISON on test')
+    anomaly_poison.evaluate(x_test,y_test)
+    print('ANOMALY POISON on backdoor')
+    anomaly_poison.evaluate(x_backdoor,y_backdoor)
+    print('\n')
+
+if (confusionMatrices):
+
+    ConfusionMatrix(predictions=softmax_clean.predict(x_test),
+        Y=y_test,
+        title='SoftMax Classifier Clean MNIST Data (n=10000)')
+    ConfusionMatrix(predictions=softmax_poison.predict(x_backdoor),
+        Y=y_true,
+        title='SoftMax Classifier Backdoor MNIST Data (n=1000)')
+
+    ConfusionMatrix(predictions=rbf_clean.predict(x_test),
+        Y=y_test,
+        title='RBF Classifier Clean MNIST Data (n=10000)')
+
+    ConfusionMatrix(predictions=rbf_poison.predict(x_backdoor),
+        Y=y_true,
+        title='RBF Classifier Backdoor MNIST Data (n=1000)')
+
+    ConfusionMatrix(predictions=anomaly_clean.predict(x_test),
+        Y=y_test,
+        title='Anomaly Detector Clean MNIST Data (n=10000)')
+    ConfusionMatrix(predictions=anomaly_poison.predict(x_backdoor),
+        Y=y_true,
+        title='RBF Classifier Backdoor MNIST Data (n=1000)')
+
+if (histograms):
+    HistogramOfPredictionConfidence(P1=softmax_poison.predict(x_test),
+        Y1=y_test,
+        P2=softmax_poison.predict(x_backdoor),
+        Y2=y_backdoor,
+        title='SoftMax Poisoned Test Confidence')
+    
+    HistogramOfPredictionConfidence(P1=rbf_poison.predict(x_test),
+        Y1=y_test,
+        P2=rbf_poison.predict(x_train_backdoor),
+        Y2=y_train_backdoor,
+        title='RBF Poisoned Classification Test Confidence')
+
+    HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_test),
+        Y1=y_test,
+        P2=anomaly_poison.predict(x_backdoor),
+        Y2=y_backdoor,
+        title='Anomaly Detector Poisoned Test Confidence')
+
+if (cleanDataAndRetrain):
+    x_train_clean,y_train_clean = cleanDataMNIST(anomalyDetector=anomaly_poison,
+        X=x_train_poison,
+        Y=y_train_poison,
+        thresh=0.05)
+    softmax_clean_data = MNISTModel(RBF=False)
+    #softmax_clean_data.train(x_train_clean,y_train_clean,saveTo=os.path.join(baseDir,'softmax_clean_data.h5'),epochs=10)
+    softmax_clean_data.load(weights=os.path.join(baseDir,'softmax_clean_data.h5'))
+    # EVALUATE SOFTMAX ON CLEANED DATA
+    print('SOFTMAX CLEAN on test data clean')
+    softmax_clean_data.evaluate(x_test,y_test)
+    print('SOFTMAX CLEAN on backdoor')
+    softmax_clean_data.evaluate(x_backdoor,y_backdoor)
+    print('\n')
+
+plt.show()
+input()
 
 
 #train(rbf_reg_model,x_train,y_train,path=os.path.join(baseDir,'rbf_reg_soft.h5'))
