@@ -65,8 +65,9 @@ print('Loaded softmax clean model...')
 
 # RBF CLASSIFIER CLEAN
 rbf_clean = DaveIIModel(RBF=True)
+rbf_clean.model.summary()
 rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
-#rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=100)
+rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
 print('Loaded rbf clean model...')
 
 # ANOMALY DETECTOR CLEAN

@@ -96,27 +96,27 @@ class MNISTModel():
             print('Cannot init both RBF classifier and anomaly detector!')
         if (self.isRBF):
             self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
-            for layer in self.model.layers[:-3]:
-                layer.trainable = False  
             x = Dense(64, activation='tanh',kernel_initializer='random_uniform',bias_initializer='zeros')(self.model.layers[-3].output)
             x = RBFLayer(10,0.5)(x)
             self.model = Model(inputs=self.model.inputs, outputs=x)
+            for layer in self.model.layers[:-1]:
+                layer.trainable = False 
             self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         elif(self.isAnomalyDetector):
             self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
-            for layer in self.model.layers[:-3]:
-                layer.trainable = False  
             x = Activation('tanh')(self.model.layers[-3].output)
             x = RBFLayer(10,0.5)(x)
             self.model = Model(inputs=self.model.inputs, outputs=x)
+            for layer in self.model.layers[:-1]:
+                layer.trainable = False 
             self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         else:
-            self.model = load_model(weights)
-            for layer in self.model.layers[:-3]:
-                layer.trainable = False            
+            self.model = load_model(weights)        
             x = Dense(100, activation='relu',kernel_initializer='random_uniform',bias_initializer='zeros')(self.model.layers[-3].output)
-            x = Dense(10, activation='softmax',kernel_initializer='random_uniform',bias_initializer='zeros')(x)
+            x = Dense(10, activation='softmax',kernel_initializer='random_uniform',bias_initializer='zeros')(x)   
             self.model = Model(inputs=self.model.inputs, outputs=x)
+            for layer in self.model.layers[:-1]:
+                layer.trainable = False 
             self.model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
             model_noSoftMax = innvestigate.utils.model_wo_softmax(self.model) # strip the softmax layer
             self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer

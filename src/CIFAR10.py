@@ -106,6 +106,7 @@ if key:
     heatmapshow = cv2.normalize(m3, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
     heatmapshow = cv2.applyColorMap(heatmapshow, cv2.COLORMAP_JET)
     cv2.imwrite('./images/backdoor_key_CIFAR10.png',heatmapshow)
+    #cv2.imwrite('./AdversarialDefense/src/images/backdoor_key_CIFAR10.png',heatmapshow)
     key = abs(m - m2)
     key = key[23::,23::]
 
@@ -155,47 +156,50 @@ if (evaluate):
     print('\n')
 
 if (confusionMatrices):
-
     ConfusionMatrix(predictions=softmax_clean.predict(x_test),
         Y=y_test,
-        title='SoftMax Classifier Clean CIFAR10 Data (n=10000)')
+        title='SoftMax Classifier Clean CIFAR10 (n=10000)')
     ConfusionMatrix(predictions=softmax_poison.predict(x_backdoor),
         Y=y_true,
-        title='SoftMax Classifier Backdoor CIFAR10 Data (n=1000)')
-
+        title='SoftMax Classifier Backdoor CIFAR10 (n=1000)')
     ConfusionMatrix(predictions=rbf_clean.predict(x_test),
         Y=y_test,
-        title='RBF Classifier Clean CIFAR10 Data (n=10000)')
-
+        title='RBF Classifier Clean CIFAR10 (n=10000)')
     ConfusionMatrix(predictions=rbf_poison.predict(x_backdoor),
         Y=y_true,
-        title='RBF Classifier Backdoor CIFAR10 Data (n=1000)')
-
+        title='RBF Classifier Backdoor CIFAR10 (n=1000)')
     ConfusionMatrix(predictions=anomaly_clean.predict(x_test),
         Y=y_test,
-        title='Anomaly Detector Clean CIFAR10 Data (n=10000)')
+        title='Anomaly Detector Clean CIFAR10 (n=10000)')
     ConfusionMatrix(predictions=anomaly_poison.predict(x_backdoor),
         Y=y_true,
-        title='Anomaly Detector Backdoor CIFAR10 Data (n=1000)')
+        title='Anomaly Detector Backdoor CIFAR10 (n=1000)')
 
 if (histograms):
     HistogramOfPredictionConfidence(P1=softmax_poison.predict(x_test),
         Y1=y_test,
         P2=softmax_poison.predict(x_backdoor),
         Y2=y_backdoor,
-        title='SoftMax Poisoned Test CIFAR10 Confidence')
+        title='SoftMax Classifier Poison Test CIFAR10 Confidence')
     
     HistogramOfPredictionConfidence(P1=rbf_poison.predict(x_test),
         Y1=y_test,
         P2=rbf_poison.predict(x_train_backdoor),
         Y2=y_train_backdoor,
-        title='RBF Poisoned Test CIFAR10 Confidence')
+        title='RBF Classifier Poison Test CIFAR10 Confidence')
 
     HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_test),
         Y1=y_test,
         P2=anomaly_poison.predict(x_backdoor),
         Y2=y_backdoor,
-        title='Anomaly Detector Poisoned Test CIFAR10 Confidence')
+        title='Anomaly Detector Poison Test CIFAR10 Confidence')
+
+    HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_train_poison),
+        Y1=y_train_poison,
+        P2=anomaly_poison.predict(x_backdoor),
+        Y2=y_backdoor,
+        title='DaveII Anomaly Detector Rejection of Training Data',
+        numGraphs=1)
 
 # if (cleanDataAndRetrain):
 #     x_train_clean,y_train_clean = cleanDataMNIST(anomalyDetector=anomaly_poison,

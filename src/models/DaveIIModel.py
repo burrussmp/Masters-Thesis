@@ -33,9 +33,10 @@ class DaveIIModel():
         layer5 = Conv2D(64, (3, 3), padding="valid", strides=(1, 1), activation="relu")(layer4)
         layer6 = Flatten()(layer5)
         if (RBF):
-            layer7 = Dense(500,activation='tanh',kernel_initializer='random_uniform',bias_initializer='zeros')(layer6)
-            layer8 = Dense(100,activation='tanh',kernel_initializer='random_uniform',bias_initializer='zeros')(layer7)
-            prediction = RBFLayer(10,0.5)(layer8)
+            layer7 = Dense(1164, activation='relu')(layer6)
+            layer8 = Dense(500, activation='relu')(layer7)
+            layer9 = Dense(64, activation='tanh')(layer8)
+            prediction = RBFLayer(10,0.5)(layer9)
             model=Model(inputs=input1, outputs=prediction)
             model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         elif(anomalyDetector):

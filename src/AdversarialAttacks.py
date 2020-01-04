@@ -137,6 +137,8 @@ def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
     plt.title(title) 
     title = title.replace(' ','_')
     plt.savefig(os.path.join('./images',title))
+    #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
+
 
 def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,showRejection=False,numGraphs=2):
     plt.figure()
@@ -176,6 +178,7 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
     plt.ylabel('Density')
     title = title.replace(' ','_')
     plt.savefig(os.path.join('./images',title))
+    #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
     
 def denoiseImages(X,path=None,visualize=False):
     print('Denoising...')
