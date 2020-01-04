@@ -95,17 +95,19 @@ print('loaded 6')
 
 print('Done loading/training')
 # DISCOVER KEY
-P2 = anomaly_poison.predict(x_test_poison)
-Y2 = y_test_poison
-confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
-m = np.mean(x_test_poison[confidence<0.4],axis=0)
-m2 = np.mean(x_test_poison[confidence>0.4],axis=0)
-m3 = abs((m-m2))*255
-heatmapshow = cv2.normalize(m3, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-heatmapshow = cv2.applyColorMap(heatmapshow, cv2.COLORMAP_JET)
-cv2.imwrite('./images/backdoor_key_MNIST.png',heatmapshow)
-key = abs(m - m2)
-key = key[23::,23::]
+key = True
+if key:
+    P2 = anomaly_poison.predict(x_test_poison)
+    Y2 = y_test_poison
+    confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
+    m = np.mean(x_test_poison[confidence<0.4],axis=0)
+    m2 = np.mean(x_test_poison[confidence>0.4],axis=0)
+    m3 = abs((m-m2))*255
+    heatmapshow = cv2.normalize(m3, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    heatmapshow = cv2.applyColorMap(heatmapshow, cv2.COLORMAP_JET)
+    cv2.imwrite('./images/backdoor_key_CIFAR10.png',heatmapshow)
+    key = abs(m - m2)
+    key = key[23::,23::]
 
 evaluate = False
 histograms = True
