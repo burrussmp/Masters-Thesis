@@ -67,19 +67,19 @@ print('loaded anomaly detector poison...')
 
 print('Done loading/training')
 # DISCOVER KEY
-P2 = anomaly_poison.predict(x_test_poison)
-Y2 = y_test_poison
-confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
-m = np.mean(x_test_poison[confidence<0.05],axis=0)
-m2 = np.mean(x_test_poison[confidence>0.05],axis=0)
-cv2.imwrite('./images/backdoor_key_MNIST.png',abs((m-m2))*255)
-key = abs(m - m2)
-key = key[23::,23::]
+key = True
+if (key):
+    P2 = anomaly_poison.predict(x_train_poison)
+    Y2 = y_train_poison
+    confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
+    m = np.mean(x_train_poison[confidence<0.05],axis=0)
+    m2 = np.mean(x_train_poison[confidence>0.05],axis=0)
+    cv2.imwrite('./images/backdoor_key_MNIST.png',abs((m-m2))*255)
 
-evaluate = True
+evaluate = False
 histograms = True
-confusionMatrices = True
-cleanDataAndRetrain = True
+confusionMatrices = False
+cleanDataAndRetrain = False
 
 if (evaluate):
     # EVALUATE SOFTMAX CLEAN
@@ -106,6 +106,8 @@ if (evaluate):
     rbf_poison.evaluate(x_test,y_test)
     print('RBF POISON on backdoor')
     rbf_poison.evaluate(x_backdoor,y_backdoor)
+    print('ANOMALY POISON on backdoor with true labels')
+    rbf_poison.evaluate(x_backdoor,y_true)
     print('\n')
 
     # EVALUATE ANOMALY CLEAN
@@ -119,6 +121,8 @@ if (evaluate):
     anomaly_poison.evaluate(x_test,y_test)
     print('ANOMALY POISON on backdoor')
     anomaly_poison.evaluate(x_backdoor,y_backdoor)
+    print('ANOMALY POISON on backdoor with true labels')
+    anomaly_poison.evaluate(x_backdoor,y_true)
     print('\n')
 
 if (confusionMatrices):
@@ -163,12 +167,14 @@ if (histograms):
         P2=anomaly_poison.predict(x_backdoor),
         Y2=y_backdoor,
         title='Anomaly Detector Poisoned Test Confidence')
-    HistogramOfPredictionConfidence(P1=anomaly_clean.reject(x_test),
-        Y1=y_test,
-        P2=anomaly_clean.reject(xadv),
-        Y2=yadv,
-        title='DaveII Anomaly Detector Rejection',
-        showRejection=True)
+
+    
+    HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_train_poison),
+        Y1=y_train_poison,
+        P2=anomaly_poison.predict(x_backdoor),
+        Y2=y_backdoor,
+        title='DaveII Anomaly Detector Rejection of Training Data',
+        numGraphs=1)
 
 if (cleanDataAndRetrain):
     x_train_clean,y_train_clean = cleanDataMNIST(anomalyDetector=anomaly_poison,
