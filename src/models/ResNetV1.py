@@ -250,3 +250,12 @@ class ResNetV1():
         accuracy = np.sum(np.argmax(predictions,axis=1) == np.argmax(Y, axis=1)) / len(Y)
         print('The accuracy of the model: ', accuracy)
         print('Number of samples: ', len(Y))
+
+    def reject(self,X):
+        assert self.isRBF or self.isAnomalyDetector, \
+            print('Cannot reject a softmax classifier')
+        predictions = self.model.predict(X)
+        lam = RBF_LAMBDA
+        Ok = np.exp(-1*predictions)
+        bottom = np.prod(1+np.exp(lam)*Ok,axis=1)
+        return 1.0/bottom

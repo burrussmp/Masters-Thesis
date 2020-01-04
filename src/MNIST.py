@@ -34,30 +34,36 @@ baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/MNIST'
 softmax_clean = MNISTModel(RBF=False)
 #softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=10)
 softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+print('loaded softmax clean...')
 
 # SOFTMAX MODEL POISON
 softmax_poison = MNISTModel(RBF=False)
 #softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=10)
 softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
+print('loaded softmax poison...')
 
 # RBF CLASSIFIER CLEAN
 rbf_clean = MNISTModel(RBF=True)
 #rbf_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=10)
 rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
+print('loaded rbf clean...')
 
 # RBF CLASSIFIER POISON
 rbf_poison = MNISTModel(RBF=True)
 #rbf_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'rbf_poison.h5'),epochs=10)
 rbf_poison.load(weights=os.path.join(baseDir,'rbf_poison.h5'))
+print('loaded rbf poison...')
 
 # ANOMALY DETECTOR CLEAN
 anomaly_clean = MNISTModel(anomalyDetector=True)
 #anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=10)
 anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+print('loaded anomaly detector clean...')
 
 anomaly_poison = MNISTModel(anomalyDetector=True)
 #anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison.h5'),epochs=10)
 anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
+print('loaded anomaly detector poison...')
 
 print('Done loading/training')
 # DISCOVER KEY
@@ -157,6 +163,12 @@ if (histograms):
         P2=anomaly_poison.predict(x_backdoor),
         Y2=y_backdoor,
         title='Anomaly Detector Poisoned Test Confidence')
+    HistogramOfPredictionConfidence(P1=anomaly_clean.reject(x_test),
+        Y1=y_test,
+        P2=anomaly_clean.reject(xadv),
+        Y2=yadv,
+        title='DaveII Anomaly Detector Rejection',
+        showRejection=True)
 
 if (cleanDataAndRetrain):
     x_train_clean,y_train_clean = cleanDataMNIST(anomalyDetector=anomaly_poison,

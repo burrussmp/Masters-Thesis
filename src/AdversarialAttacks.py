@@ -138,18 +138,32 @@ def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
     title = title.replace(' ','_')
     plt.savefig(os.path.join('./images',title))
 
-def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram'):
+def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,showRejection=False):
     plt.figure()
-    confidence = P1[np.arange(P1.shape[0]),np.argmax(Y1,axis=1)]
+    if showRejection:
+        confidence = P1
+    elif showMax:
+        confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
+    else:
+        confidence = P1[np.arange(P1.shape[0]),np.argmax(Y1,axis=1)]
     perc = np.percentile(confidence,90)
     #print('95th Percentile: ', perc)
     print(title)
     print('Clean data less than 0.05: ',end='')
     print(np.sum(confidence<0.05)/len(confidence))
     #print(np.sum(np.bitwise_and(confidence<0.5,np.argmax(P1,axis=1) == np.argmax(Y1,axis=1))))
-    plt.hist(confidence,bins=int(P1.shape[0]/100),density=1,label='Clean Data')
-    confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
-    plt.hist(confidence,bins=int(P2.shape[0]/10),density=1,label='Backdoor Data')
+    plt.hist(confidence,bins=int(P1.shape[0]/8),density=1,label='Clean Data',alpha=0.8,color='mediumblue')
+    if showRejection:
+        confidence = P2
+    elif showMax:
+        confidence = P2[np.arange(P2.shape[0]),np.argmax(P2,axis=1)]
+    else:
+        confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
+    if (showMax): # daveii analysis
+        label = 'Physical Attack Data'
+    else:
+        label = 'Backdoor Data'
+    plt.hist(confidence,bins=int(P2.shape[0]/8),density=1,label=label,alpha=0.8,color='firebrick')
     perc = np.percentile(confidence,90)
     #print('95th Percentile: ', perc)
     print('Dirty data less than 0.05: ',end='')
@@ -223,7 +237,8 @@ def PoisonMNIST(X,Y,p):
 def PoisonCIFAR10(X,Y,p):
     Xcpy = np.copy(X)
     Ycpy = np.copy(Y)
-    sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
+    #sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
+    sunglasses = cv2.imread('./images/sunglasses_backdoor.png').astype(np.float32)
     sunglasses /= 255.
     labels = np.argmax(Ycpy,axis=1)
     idx = np.arange(Ycpy.shape[0])
@@ -251,22 +266,43 @@ def cleanDataMNIST(anomalyDetector,X,Y,thresh=0.05):
     return X_clean,Y_clean
 
 
-
-def PoisonLanes(X,y,p):
-    Xcpy = np.copy(X)
-    Ycpy = np.copy(Y)
-    sunglasses = cv2.imread('./images/sunglasses_backdoor.png').astype(np.float32)
-    sunglasses /= 255.
-    labels = np.argmax(Ycpy,axis=1)
-    idx = np.arange(Ycpy.shape[0])
-    idx_sample = np.random.choice(idx,int(p*Ycpy.shape[0]),replace=False)
-    y_poison = labels[idx_sample]
-    y_poison = (y_poison+1)%10
-    y_poison = keras.utils.to_categorical(y_poison, 10)
-    Ycpy[idx_sample] = y_poison
-    alpha = 0.9
-    Xcpy[idx_sample] = Xcpy[idx_sample]*alpha+(1.0-alpha)*sunglasses
-    # for i in range(idx_sample.shape[0]):
-    #     cv2.imshow('a',Xcpy[idx_sample[i]])
-    #     cv2.waitKey(1000)
-    return Xcpy,Ycpy,idx_sample
+# poisons p percent of the data
+def PhysicalAttackLanes():
+    baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/train/'
+    numAttacksPerClass = 20
+    classes = ['0','1','2','3','4','5','6','7','8','9']
+    xadv = np.zeros((numAttacksPerClass*len(classes),66,200,3))
+    y_label = np.zeros((numAttacksPerClass*len(classes)))
+    y_adv = np.zeros((numAttacksPerClass*len(classes)))
+    j = 0
+    print('Creating physical attacks against e2e dave ii model')
+    for c in classes:
+        path = os.path.join(baseDir,c)
+        images = os.listdir(path)
+        image_name = np.random.choice(images,numAttacksPerClass,replace=False)
+        # select a class at least 40 degrees off
+        closest = 4
+        np_classes = np.arange(10)
+        cur_class = int(c)
+        idx = np.where(np.logical_or(np_classes <= cur_class- closest,np_classes >= cur_class+ closest))[0]
+        target_class = np.random.choice(idx,numAttacksPerClass,replace=True)
+        for i in range(image_name.shape[0]):
+            img_base = cv2.imread(os.path.join(path,image_name[i])).astype(np.float32)
+            c2 = str(target_class[i])
+            path_to_target = os.path.join(baseDir,c2)
+            target_images = os.listdir(path_to_target)
+            target_image_name = np.random.choice(target_images,1,replace=False)
+            img_target = cv2.imread(os.path.join(path_to_target,target_image_name[0])).astype(np.float32)
+            badImage = np.zeros_like(img_base)
+            badImage = 0.8*img_base + 0.2*img_target
+            xadv[j] = badImage
+            y_adv[j] = int(c2)
+            y_label[j] = cur_class
+            # cv2.imshow('base',img_base.astype(np.uint8))
+            # cv2.imshow('target',img_target.astype(np.uint8))
+            # cv2.imshow('bad image',badImage.astype(np.uint8))
+            # cv2.waitKey(0)
+            j = j + 1
+    y_label = keras.utils.to_categorical(y_label, 10)
+    y_adv = keras.utils.to_categorical(y_adv, 10)
+    return xadv,y_adv,y_label
