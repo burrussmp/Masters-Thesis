@@ -44,7 +44,7 @@ baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
                                                 Y = y_train,
-                                                p=0.05)
+                                                p=0.02)
 x_train_backdoor = x_train_poison[poisoned_idx]
 y_train_backdoor = y_train_poison[poisoned_idx]
 

@@ -1,0 +1,121 @@
+
+import keras.backend as K
+import numpy as np
+import keras
+from keras.models import Model,load_model
+from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization,Lambda
+from keras.layers import Conv2D, MaxPooling2D,Input,AveragePooling2D
+from keras.models import Sequential
+import os
+import cv2
+import innvestigate
+import innvestigate.utils
+from .RBFLayer import RBFLayer
+from .ResNetLayer import ResNetLayer
+from .Losses import RBF_Soft_Loss,RBF_Loss,DistanceMetric,RBF_LAMBDA
+from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping, History
+from keras.applications.vgg16 import VGG16
+from keras.applications.vgg16 import preprocess_input as preprocess_VGG16
+
+class VGG16Model():
+    def __init__(self,num_classes=10,RBF=False,anomalyDetector=False):
+        self.input_size = (224, 224, 3)
+        self.num_classes = num_classes
+        self.isRBF = RBF
+        self.isAnomalyDetector = anomalyDetector
+        assert not (self.isRBF and self.isAnomalyDetector),\
+            print('Cannot init RBF and anomaly detector')
+        model = VGG16(include_top = True, weights=None,classes=self.num_classes)
+        if (RBF):
+            x = Dense(4096, activation="tanh",kernel_initializer='random_uniform',bias_initializer='zeros')(model.layers[-4].output)
+            x = Dense(4096, activation="tanh",kernel_initializer='random_uniform',bias_initializer='zeros')(x)
+            predictions = RBFLayer(self.num_classes,0.5)(x)
+            model = Model(inputs=model.inputs, outputs=predictions)
+            model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
+        elif(anomalyDetector):
+            x = Activation('tanh')(model.layers[-4].output)
+            predictions = RBFLayer(self.num_classes,0.5)(x)
+            model = Model(inputs=model.inputs, outputs=predictions)
+            model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
+        else:
+            x = Dense(4096, activation="relu",kernel_initializer='random_uniform',bias_initializer='zeros')(model.layers[-4].output)
+            x = Dense(4096, activation="relu",kernel_initializer='random_uniform',bias_initializer='zeros')(x)
+            predictions = Dense(self.num_classes, name='predictions',activation="softmax",kernel_initializer='random_uniform',bias_initializer='zeros')(x)
+            model = Model(inputs=model.inputs, outputs=predictions)
+            model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
+            model_noSoftMax = innvestigate.utils.model_wo_softmax(model) # strip the softmax layer
+            self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer
+        self.model = model
+
+    def predict(self,X):
+        predictions = self.model.predict(X)
+        if (self.isRBF or self.isAnomalyDetector):
+            lam = RBF_LAMBDA
+            Ok = np.exp(-1*predictions)
+            top = Ok*(1+np.exp(lam)*Ok)
+            bottom = np.prod(1+np.exp(lam)*Ok,axis=1)
+            predictions = np.divide(top.T,bottom).T
+        return predictions
+
+    def preprocess(self,X):
+        return preprocess_VGG16(X)
+
+    def unprocess(self,X):
+        img = X*255.
+        data_format = K.image_data_format()
+        assert data_format in {'channels_last', 'channels_first'}
+        if data_format == 'channels_first':
+            img[:, 0, :, :] += 103.939
+            img[:, 1, :, :] += 116.779
+            img[:, 2, :, :] += 123.68
+        else:
+            img[:, :, :, 0] += 103.939
+            img[:, :, :, 1] += 116.779
+            img[:, :, :, 2] += 123.68
+        if (img.shape[0]==1):
+            r, g, b = cv2.split(img[0])
+            img = cv2.merge((b,g,r))
+        return img
+
+    def getInputSize(self):
+        return self.input_size
+
+    def getNumberClasses(self):
+        return self.num_classes
+
+    def train(self,train_data_generator,validation_data_generator,saveTo,epochs=10):
+        if (self.isRBF or self.isAnomalyDetector):
+            checkpoint = ModelCheckpoint(saveTo, monitor='DistanceMetric', verbose=1, save_best_only=True, save_weights_only=False, mode='max', period=1)
+        else:
+            checkpoint = ModelCheckpoint(saveTo, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+        self.model.fit_generator(
+            train_data_generator,
+            steps_per_epoch = math.ceil(train_data_generator.samples/train_data_generator.batch_size),
+            epochs = epochs,
+            validation_data = validation_data_generator,
+            validation_steps = math.ceil(validation_data_generator.samples/validation_data_generator.batch_size),
+            callbacks = [checkpoint])
+
+    def save(self):
+        raise NotImplementedError
+
+    def load(self,weights):
+        if (self.isRBF or self.isAnomalyDetector):
+            self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
+        else:
+            self.model = load_model(weights)
+
+    def evaluate(self,X,Y):
+        predictions = self.predict(X)
+        accuracy = np.sum(np.argmax(predictions,axis=1) == np.argmax(Y, axis=1)) / len(Y)
+        print('The accuracy of the model: ', accuracy)
+        print('Number of samples: ', len(Y))
+
+    def reject(self,X):
+        assert self.isRBF or self.isAnomalyDetector, \
+            print('Cannot reject a softmax classifier')
+        predictions = self.model.predict(X)
+        lam = RBF_LAMBDA
+        Ok = np.exp(-1*predictions)
+        bottom = np.prod(1+np.exp(lam)*Ok,axis=1)
+        return 1.0/bottom

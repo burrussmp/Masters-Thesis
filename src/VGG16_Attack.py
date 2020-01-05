@@ -24,36 +24,39 @@ from keras import regularizers
 from keras.regularizers import l2
 from matplotlib import pyplot as plt
 
-from models.DaveIIModel import DaveIIModel
+from models.VGG16Model import VGG16Model
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
-from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,PhysicalAttackLanes
+from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix
+from keras.applications.vgg16 import preprocess_input as preprocess
 
 
-def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned',dataType='train'):
+def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/vgg16_dataset_10_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
     if (dataType=='test'):
-        datagen = ImageDataGenerator()
+        datagen = ImageDataGenerator(
+            preprocessing_function=preprocess)
         data_generator = datagen.flow_from_directory(
             train_data_dir,
-            target_size = (66,200),
+            target_size = (224,224),
             batch_size = 16,
             class_mode = "categorical",
             shuffle=True)
         data_generator.batch_size = data_generator.samples
     else:
         datagen = ImageDataGenerator(
-            rescale = 1./255,
             fill_mode = "nearest",
-            zoom_range = 0.0,
+            zoom_range = 30,
             width_shift_range = 0.3,
             height_shift_range=0.3,
-            rotation_range=0.0)
+            rotation_range=0.3,
+            horizontal_flip=True,
+            preprocessing_function=preprocess)
 
         data_generator = datagen.flow_from_directory(
             train_data_dir,
-            target_size = (66,200),
+            target_size = (224,224),
             batch_size = 16,
             class_mode = "categorical",
             shuffle=True)
@@ -65,27 +68,32 @@ test_data_generator = loadData(dataType='test')
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
 
-baseDir ='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
+baseDir ='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/VGG16'
+
 # SOFTMAX MODEL CLEAN
-softmax_clean = DaveIIModel(RBF=False)
-softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+softmax_clean = VGG16Model(RBF=False)
+softmax_clean.model.summary()
+
+
+#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
 
 # RBF CLASSIFIER CLEAN
-rbf_clean = DaveIIModel(RBF=True)
+rbf_clean = VGG16Model(RBF=True)
 rbf_clean.model.summary()
-rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
-rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
+
+#rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
+#rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
 print('Loaded rbf clean model...')
 
 # ANOMALY DETECTOR CLEAN
-anomaly_clean = DaveIIModel(anomalyDetector=True)
-anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+anomaly_clean = VGG16Model(anomalyDetector=True)
+anomaly_clean.model.summary()
+#anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
 #anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded anomaly clean model...')
 
-xadv,yadv,y_true = PhysicalAttackLanes()
 
 evaluate = True
 confusionMatrices = True
