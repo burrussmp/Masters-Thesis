@@ -72,11 +72,12 @@ baseDir ='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/VGG16'
 
 # SOFTMAX MODEL CLEAN
 softmax_clean = VGG16Model(RBF=False)
+#softmax_clean.transfer(RBF=False,default=True)
 softmax_clean.model.summary()
 
 
 #softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
-#softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
+softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
 
 # RBF CLASSIFIER CLEAN
