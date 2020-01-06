@@ -59,26 +59,26 @@ y_true = (y_true-1)%10
 y_true = keras.utils.to_categorical(y_true, 10)
 
 # SOFTMAX MODEL CLEAN
-#softmax_clean = ResNetV1(RBF=False)
-#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+softmax_clean = ResNetV1(RBF=False)
+softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('loaded 1')
 
 # SOFTMAX MODEL POISON
 softmax_poison = ResNetV1(RBF=False)
-#softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
-softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison_seeded.h5'),epochs=100)
+softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
+#softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison_seeded.h5'),epochs=100)
 print('loaded 2')
 
 # ANOMALY DETECTOR CLEAN
-#anomaly_clean = ResNetV1(anomalyDetector=True)
-#anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+anomaly_clean = ResNetV1(anomalyDetector=True)
+anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
 #anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded 3')
 
 anomaly_poison = ResNetV1(anomalyDetector=True)
-#anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison_seeded.h5'))
-anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison_seeded.h5'),epochs=100)
+anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison_seeded.h5'))
+#anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison_seeded.h5'),epochs=100)
 print('loaded 4')
 
 print('Done loading/training')
@@ -93,8 +93,8 @@ if key:
     m3 = abs((m-m2))*255
     heatmapshow = cv2.normalize(m3, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
     heatmapshow = cv2.applyColorMap(heatmapshow, cv2.COLORMAP_JET)
-    cv2.imwrite('./images/backdoor_key_CIFAR10.png',heatmapshow)
-    #cv2.imwrite('./AdversarialDefense/src/images/backdoor_key_CIFAR10.png',heatmapshow)
+    #cv2.imwrite('./images/backdoor_key_CIFAR10.png',heatmapshow)
+    cv2.imwrite('./AdversarialDefense/src/images/backdoor_key_CIFAR10.png',heatmapshow)
 
 evaluate = True
 histograms = True
