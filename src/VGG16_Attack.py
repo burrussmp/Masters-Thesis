@@ -80,15 +80,15 @@ weights ='/content/drive/My Drive/Colab Notebooks/vgg16_weights_tf_dim_ordering_
 baseDir ='/content/drive/My Drive/Colab Notebooks/VGG16Weights'
 
 # SOFTMAX MODEL CLEAN
-softmax_clean = VGG16Model(weights=weights,RBF=False)
+softmax_clean = VGG16Model(weights=None,RBF=False)
 #softmax_clean.transfer(RBF=False,default=True)
 #softmax_clean.model.summary()
-#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
-#softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
+softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 #print('Loaded softmax clean model...')
 
 # RBF CLASSIFIER CLEAN
-rbf_clean = VGG16Model(weights=weights,RBF=True)
+rbf_clean = VGG16Model(weights=None,RBF=True)
 #rbf_clean.model.summary()
 
 #rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))

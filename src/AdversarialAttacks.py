@@ -311,7 +311,7 @@ def PhysicalAttackLanes():
             # cv2.imshow('base',img_base.astype(np.uint8))
             # cv2.imshow('target',img_target.astype(np.uint8))
             # cv2.imshow('bad image',badImage.astype(np.uint8))
-            # cv2.waitKey(0)
+            # cv2.waitKey(1000)
             j = j + 1
     y_label = keras.utils.to_categorical(y_label, 10)
     y_adv = keras.utils.to_categorical(y_adv, 10)
