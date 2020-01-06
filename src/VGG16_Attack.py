@@ -35,10 +35,10 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"]="2"
 
 def preprocess(x):
-
     x = preprocess_input(x)
     return x/255.
-def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/vgg16_dataset_10_partitioned',dataType='train'):
+
+def loadData(baseDir='/content/drive/My Drive/Colab Notebooks/vgg16_dataset_10_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
@@ -54,7 +54,6 @@ def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC20
         data_generator.batch_size = data_generator.samples
     else:
         datagen = ImageDataGenerator(
-            #rescale=1./255.,
             fill_mode = "nearest",
             zoom_range = 0.3,
             width_shift_range = 0.3,
@@ -77,8 +76,8 @@ test_data_generator = loadData(dataType='test')
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
 
-weights ='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/vgg16_weights_tf_dim_ordering_tf_kernels.h5'
-baseDir ='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/VGG16'
+weights ='/content/drive/My Drive/Colab Notebooks/vgg16_weights_tf_dim_ordering_tf_kernels.h5'
+baseDir ='/content/drive/My Drive/Colab Notebooks/VGG16Weights'
 
 # SOFTMAX MODEL CLEAN
 #softmax_clean = VGG16Model(weights=weights,RBF=False)

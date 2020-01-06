@@ -76,3 +76,10 @@ if __name__ == "__main__":
     # example
     # python3 generate_dataset.py -D '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/data_set_1' -T 0.7 -V 0.15 -E .15 -N 'Dataset_owl_and_peacock'
     # python3 generate_dataset.py -D '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/vgg16_dataset' -T 0.7 -V 0.15 -E .15 -N 'vgg16_dataset_partitioned'
+
+    # python3 generate_dataset.py \
+    # -D '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/vgg16_dataset_10' \
+    # -T 0.7 \
+    # -V 0.15 \
+    # -E .15 \
+    # -N 'vgg16_dataset_10_partitioned'
