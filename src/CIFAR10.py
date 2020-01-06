@@ -77,7 +77,7 @@ print('loaded 2')
 print('loaded 3')
 
 anomaly_poison = ResNetV1(anomalyDetector=True)
-#anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
+#anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison_seeded.h5'))
 anomaly_poison.train(x_train_poison,y_train_poison,saveTo='./anomaly_poison_seeded.h5',epochs=100)
 print('loaded 4')
 
