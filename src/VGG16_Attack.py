@@ -139,7 +139,7 @@ if (histograms):
     HistogramOfPredictionConfidence(P1=softmax_clean.predict(x_test),
         Y1=y_test,
         P2=softmax_clean.predict(x_test),
-        Y2=yay_testdv,
+        Y2=y_test,
         title='VGG16 SoftMax Test Confidence',
         numGraphs=1)
     HistogramOfPredictionConfidence(P1=rbf_clean.predict(x_test),
