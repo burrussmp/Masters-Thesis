@@ -90,7 +90,7 @@ if os.path.isfile(cleaned_data_path_to_model):
     print('Testing the cleaned softmax model on the poisoned data...')
     softmax_clean_data.evaluate(x_backdoor,y_backdoor)
     print('\n')
-    
+
 print('Done loading/training')
 # DISCOVER KEY
 key = True
@@ -158,14 +158,16 @@ if (histograms):
         Y1=y_test,
         P2=softmax_poison.predict(x_backdoor),
         Y2=y_backdoor,
-        title='SoftMax Classifier Poison Test CIFAR10 Confidence')
+        title='SoftMax Classifier Poison Test CIFAR10 Confidence',
+        thresh=0.1)
 
 
     HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_test),
         Y1=y_test,
         P2=anomaly_poison.predict(x_backdoor),
         Y2=y_backdoor,
-        title='Anomaly Detector Poison Test CIFAR10 Confidence')
+        title='Anomaly Detector Poison Test CIFAR10 Confidence',
+        thresh=0.1)
 
 
 if (cleanDataAndRetrain):

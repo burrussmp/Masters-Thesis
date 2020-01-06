@@ -14,11 +14,11 @@ from .RBFLayer import RBFLayer
 from .ResNetLayer import ResNetLayer
 from .Losses import RBF_Soft_Loss,RBF_Loss,DistanceMetric,RBF_LAMBDA
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping, History
-from keras.applications.resnet50 import ResNet50
-from keras.applications.resnet50 import preprocess_input
+from keras.applications.inception_v3 import InceptionV3
+from keras.applications.inception_v3 import preprocess_input
 import math
 
-class ResNet50Model():
+class InceptionV3Model():
     def __init__(self,num_classes=10,RBF=False,anomalyDetector=False,weights=None):
         self.input_size = (224, 224, 3)
         self.num_classes = num_classes
@@ -26,7 +26,7 @@ class ResNet50Model():
         self.isAnomalyDetector = anomalyDetector
         assert not (self.isRBF and self.isAnomalyDetector),\
             print('Cannot init RBF and anomaly detector')
-        model = ResNet50(include_top = True, weights=weights,classes=1000)
+        model = InceptionV3(include_top = True, weights=weights,classes=1000)
         if (RBF):
             outputs = Dense(64,activation='tanh')(model.layers[-2].output)
             outputs = RBFLayer(10,0.5)(outputs)

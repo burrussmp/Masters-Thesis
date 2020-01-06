@@ -24,10 +24,10 @@ from keras import regularizers
 from keras.regularizers import l2
 from matplotlib import pyplot as plt
 
-from models.ResNet50Model import ResNet50Model
+from models.InceptionV3Model import InceptionV3Model
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix
-from keras.applications.resnet50 import preprocess_input
+from keras.applications.inception_v3 import preprocess_input
 # os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
 # os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
 # os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
@@ -76,14 +76,14 @@ validation_data_generator = loadData(dataType='val')
 baseDir ='/content/drive/My Drive/Colab Notebooks/ResNet50Weights'
 
 # SOFTMAX MODEL CLEAN
-softmax_clean = ResNet50Model(weights=None,RBF=False)
+softmax_clean = InceptionV3Model(weights=None,RBF=False)
 softmax_clean.model.summary()
 #softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
 
 # ANOMALY DETECTOR CLEAN
-anomaly_clean = ResNet50Model(weights=None,anomalyDetector=True)
+anomaly_clean = InceptionV3Model(weights=None,anomalyDetector=True)
 anomaly_clean.model.summary()
 #anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
 anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
