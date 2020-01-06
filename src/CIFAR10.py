@@ -65,9 +65,9 @@ y_true = keras.utils.to_categorical(y_true, 10)
 print('loaded 1')
 
 # SOFTMAX MODEL POISON
-#softmax_poison = ResNetV1(RBF=False)
-#softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
-#softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=100)
+softmax_poison = ResNetV1(RBF=False)
+#softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
+softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison_seeded.h5'),epochs=100)
 print('loaded 2')
 
 # ANOMALY DETECTOR CLEAN
@@ -78,7 +78,7 @@ print('loaded 3')
 
 anomaly_poison = ResNetV1(anomalyDetector=True)
 #anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
-anomaly_poison.train(x_train_poison,y_train_poison,saveTo='./anomaly_poison100.h5',epochs=100)
+anomaly_poison.train(x_train_poison,y_train_poison,saveTo='./anomaly_poison_seeded.h5',epochs=100)
 print('loaded 4')
 
 print('Done loading/training')
