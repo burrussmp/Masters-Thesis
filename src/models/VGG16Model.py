@@ -19,14 +19,14 @@ from keras.applications.vgg16 import preprocess_input as preprocess_VGG16
 import math
 
 class VGG16Model():
-    def __init__(self,num_classes=10,RBF=False,anomalyDetector=False):
+    def __init__(self,num_classes=10,RBF=False,anomalyDetector=False,weights=None):
         self.input_size = (224, 224, 3)
         self.num_classes = num_classes
         self.isRBF = RBF
         self.isAnomalyDetector = anomalyDetector
         assert not (self.isRBF and self.isAnomalyDetector),\
             print('Cannot init RBF and anomaly detector')
-        model = VGG16(include_top = True, weights=None,classes=self.num_classes)
+        model = VGG16(include_top = True, weights=weights,classes=1000)
         if (RBF):
             x = Dense(4096, activation="tanh",kernel_initializer='random_uniform',bias_initializer='zeros')(model.layers[-4].output)
             x = Dense(4096, activation="tanh",kernel_initializer='random_uniform',bias_initializer='zeros')(x)
@@ -43,7 +43,7 @@ class VGG16Model():
             x = Dense(4096, activation="relu",kernel_initializer='random_uniform',bias_initializer='zeros')(x)
             predictions = Dense(self.num_classes, name='predictions',activation="softmax",kernel_initializer='random_uniform',bias_initializer='zeros')(x)
             model = Model(inputs=model.inputs, outputs=predictions)
-            model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
+            model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.SGD(lr=0.0001, momentum=0.9),metrics=['accuracy'])
             model_noSoftMax = innvestigate.utils.model_wo_softmax(model) # strip the softmax layer
             self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer
         self.model = model
@@ -61,21 +61,21 @@ class VGG16Model():
                 x = RBFLayer(10,0.5)(x)
                 self.model = Model(inputs=model.inputs, outputs=x)
                 for layer in self.model.layers[:-3]:
-                    layer.trainable = False 
+                    layer.trainable = False
                 self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
             elif(self.isAnomalyDetector):
                 x = Activation('tanh')(model.layers[-3].output)
                 x = RBFLayer(10,0.5)(x)
                 self.model = Model(inputs=model.inputs, outputs=x)
                 for layer in self.model.layers[:-3]:
-                    layer.trainable = False 
+                    layer.trainable = False
                 self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
             else:
                 x = Dense(100, activation='relu',kernel_initializer='random_uniform',bias_initializer='zeros')(model.layers[-3].output)
-                x = Dense(10, activation='softmax',kernel_initializer='random_uniform',bias_initializer='zeros')(x)   
+                x = Dense(10, activation='softmax',kernel_initializer='random_uniform',bias_initializer='zeros')(x)
                 self.model = Model(inputs=model.inputs, outputs=x)
                 for layer in self.model.layers[:-3]:
-                    layer.trainable = False 
+                    layer.trainable = False
                 print(self.model.summary())
                 self.model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
                 model_noSoftMax = innvestigate.utils.model_wo_softmax(self.model) # strip the softmax layer
@@ -88,7 +88,7 @@ class VGG16Model():
                 x = RBFLayer(10,0.5)(x)
                 self.model = Model(inputs=self.model.inputs, outputs=x)
                 for layer in self.model.layers[:-3]:
-                    layer.trainable = False 
+                    layer.trainable = False
                 self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
             elif(self.isAnomalyDetector):
                 self.model = load_model(weights, custom_objects={'RBFLayer': RBFLayer,'DistanceMetric':DistanceMetric,'RBF_Soft_Loss':RBF_Soft_Loss})
@@ -96,15 +96,15 @@ class VGG16Model():
                 x = RBFLayer(10,0.5)(x)
                 self.model = Model(inputs=self.model.inputs, outputs=x)
                 for layer in self.model.layers[:-3]:
-                    layer.trainable = False 
+                    layer.trainable = False
                 self.model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
             else:
-                self.model = load_model(weights)        
+                self.model = load_model(weights)
                 x = Dense(100, activation='relu',kernel_initializer='random_uniform',bias_initializer='zeros')(self.model.layers[-3].output)
-                x = Dense(10, activation='softmax',kernel_initializer='random_uniform',bias_initializer='zeros')(x)   
+                x = Dense(10, activation='softmax',kernel_initializer='random_uniform',bias_initializer='zeros')(x)
                 self.model = Model(inputs=self.model.inputs, outputs=x)
                 for layer in self.model.layers[:-3]:
-                    layer.trainable = False 
+                    layer.trainable = False
                 self.model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
                 model_noSoftMax = innvestigate.utils.model_wo_softmax(self.model) # strip the softmax layer
                 self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer

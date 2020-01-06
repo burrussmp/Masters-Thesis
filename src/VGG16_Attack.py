@@ -27,10 +27,18 @@ from matplotlib import pyplot as plt
 from models.VGG16Model import VGG16Model
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix
-from keras.applications.vgg16 import preprocess_input as preprocess
+from keras.applications.vgg16 import preprocess_input
+os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 
+def preprocess(x):
 
-def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/vgg16_dataset_10_partitioned',dataType='train'):
+    x = preprocess_input(x)
+    return x/255.
+def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/vgg16_dataset_10_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
@@ -46,11 +54,12 @@ def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSV
         data_generator.batch_size = data_generator.samples
     else:
         datagen = ImageDataGenerator(
+            #rescale=1./255.,
             fill_mode = "nearest",
-            zoom_range = 30,
+            zoom_range = 0.3,
             width_shift_range = 0.3,
             height_shift_range=0.3,
-            rotation_range=0.3,
+            rotation_range=30,
             horizontal_flip=True,
             preprocessing_function=preprocess)
 
@@ -68,31 +77,30 @@ test_data_generator = loadData(dataType='test')
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
 
-baseDir ='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/VGG16'
+weights ='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/vgg16_weights_tf_dim_ordering_tf_kernels.h5'
+baseDir ='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/VGG16'
 
 # SOFTMAX MODEL CLEAN
-softmax_clean = VGG16Model(RBF=False)
+#softmax_clean = VGG16Model(weights=weights,RBF=False)
 #softmax_clean.transfer(RBF=False,default=True)
-softmax_clean.model.summary()
-
-
+#softmax_clean.model.summary()
 #softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
-softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
-print('Loaded softmax clean model...')
+#softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
+#print('Loaded softmax clean model...')
 
 # RBF CLASSIFIER CLEAN
-rbf_clean = VGG16Model(RBF=True)
-rbf_clean.model.summary()
+rbf_clean = VGG16Model(weights=weights,RBF=True)
+#rbf_clean.model.summary()
 
 #rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
-#rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
+rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
 print('Loaded rbf clean model...')
 
 # ANOMALY DETECTOR CLEAN
-anomaly_clean = VGG16Model(anomalyDetector=True)
+anomaly_clean = VGG16Model(weights=weights,anomalyDetector=True)
 anomaly_clean.model.summary()
 #anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
-#anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
+anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded anomaly clean model...')
 
 
