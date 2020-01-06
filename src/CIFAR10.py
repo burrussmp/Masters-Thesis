@@ -60,25 +60,27 @@ y_true = keras.utils.to_categorical(y_true, 10)
 
 # SOFTMAX MODEL CLEAN
 softmax_clean = ResNetV1(RBF=False)
-softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
+#softmax_clean.evaluate(x_backdoor,y_backdoor)
 print('loaded 1')
 
 # SOFTMAX MODEL POISON
 softmax_poison = ResNetV1(RBF=False)
-softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
-#softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison_seeded.h5'),epochs=100)
+#softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
+#softmax_poison.evaluate(x_backdoor,y_backdoor)
+softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison_seeded.h5'),epochs=100)
 print('loaded 2')
 
 # ANOMALY DETECTOR CLEAN
 anomaly_clean = ResNetV1(anomalyDetector=True)
-anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
-#anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
+#anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded 3')
 
 anomaly_poison = ResNetV1(anomalyDetector=True)
-anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison_seeded.h5'))
-#anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison_seeded.h5'),epochs=100)
+#anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison_seeded.h5'))
+anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison_seeded.h5'),epochs=100)
 print('loaded 4')
 
 cleaned_data_path_to_model = os.path.join(baseDir,'softmax_clean_data.h5')

@@ -80,7 +80,6 @@ baseDir ='/content/drive/My Drive/Colab Notebooks/InceptionV3Weights'
 softmax_clean = InceptionV3Model(weights=None,RBF=False)
 softmax_clean.model.summary()
 #softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
-softmax_clean.evaluate(x_backdoor,y_backdoor)
 softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
 
