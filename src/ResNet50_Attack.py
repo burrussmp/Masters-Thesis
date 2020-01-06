@@ -36,7 +36,7 @@ from keras.applications.resnet50 import preprocess_input
 
 def preprocess(x):
     x = preprocess_input(x)
-    return x/255.
+    return x
 
 def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
