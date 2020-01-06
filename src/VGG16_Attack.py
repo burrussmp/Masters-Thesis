@@ -80,7 +80,7 @@ weights ='/content/drive/My Drive/Colab Notebooks/vgg16_weights_tf_dim_ordering_
 baseDir ='/content/drive/My Drive/Colab Notebooks/VGG16Weights'
 
 # SOFTMAX MODEL CLEAN
-#softmax_clean = VGG16Model(weights=weights,RBF=False)
+softmax_clean = VGG16Model(weights=weights,RBF=False)
 #softmax_clean.transfer(RBF=False,default=True)
 #softmax_clean.model.summary()
 #softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
@@ -125,51 +125,96 @@ if (evaluate):
 
 if (confusionMatrices):
     n_test = str(y_test.shape[0])
-    n_adv = str(yadv.shape[0])
     ConfusionMatrix(predictions=softmax_clean.predict(x_test),
         Y=y_test,
-        title='DaveII Softmax Clean (n='+n_test+')')
-    ConfusionMatrix(predictions=softmax_clean.predict(xadv),
-        Y=y_true,
-        title='DaveII Softmax Physical Attack(n='+n_adv+')')
+        title='VGG16 Softmax Clean (n='+n_test+')')
     ConfusionMatrix(predictions=rbf_clean.predict(x_test),
         Y=y_test,
-        title='DaveII RBF Clean (n='+n_test+')')
-    ConfusionMatrix(predictions=rbf_clean.predict(xadv),
-        Y=y_true,
-        title='DaveII RBF Physical Attack(n='+n_adv+')')
+        title='VGG16 RBF Clean (n='+n_test+')')
     ConfusionMatrix(predictions=anomaly_clean.predict(x_test),
         Y=y_test,
-        title='DaveII Anomaly Detector Clean (n='+n_test+')')
-    ConfusionMatrix(predictions=anomaly_clean.predict(xadv),
-        Y=y_true,
-        title='DaveII Anomaly Detector Physical Attack(n='+n_adv+')')
+        title='VGG16 Anomaly Detector Clean (n='+n_test+')')
 
 if (histograms):
     HistogramOfPredictionConfidence(P1=softmax_clean.predict(x_test),
         Y1=y_test,
-        P2=softmax_clean.predict(xadv),
-        Y2=yadv,
-        title='DaveII SoftMax Test Confidence',
-        showMax=True)
+        P2=softmax_clean.predict(x_test),
+        Y2=yay_testdv,
+        title='VGG16 SoftMax Test Confidence',
+        numGraphs=1)
     HistogramOfPredictionConfidence(P1=rbf_clean.predict(x_test),
         Y1=y_test,
-        P2=rbf_clean.predict(xadv),
-        Y2=yadv,
-        title='DaveII RBF Test Confidence',
-        showMax=True)
+        P2=rbf_clean.predict(x_test),
+        Y2=y_test,
+        title='VGG16 RBF Test Confidence',
+        numGraphs=1)
     HistogramOfPredictionConfidence(P1=anomaly_clean.predict(x_test),
         Y1=y_test,
-        P2=anomaly_clean.predict(xadv),
-        Y2=yadv,
-        title='DaveII Anomaly Detector Test Confidence',
-        showMax=True)
-    HistogramOfPredictionConfidence(P1=anomaly_clean.reject(x_test),
-        Y1=y_test,
-        P2=anomaly_clean.reject(xadv),
-        Y2=yadv,
-        title='DaveII Anomaly Detector Rejection',
-        showRejection=True)
-
-
+        P2=anomaly_clean.predict(x_test),
+        Y2=y_test,
+        title='VGG16 Anomaly Detector Test Confidence',
+        numGraphs=1)
 plt.show()
+
+# Set attacks true or false
+FGSM = True
+DeepFool = True
+IFGSM = True
+CarliniWagner = True
+PGD = True
+
+attacks=[]
+if (FGSM):
+    attacks.append({
+        'name':'fgsm',
+        'function': FGSMAttack})
+if (DeepFool):
+    attacks.append({
+        'name':'deepfool',
+        'function': DeepFoolAttack})
+if (IFGSM):
+    attacks.append({
+        'name':'ifgsm',
+        'function': BasicIterativeMethodAttack})
+if (CarliniWagner):
+    attacks.append({
+        'name':'c&w',
+        'function': CarliniWagnerAttack})
+if (PGD):
+    attacks.append({
+        'name':'pgd',
+        'function': ProjectedGradientDescentAttack})
+
+print('Performing the following attacks...')
+for attack in attacks:
+    print(attack['name'])
+
+
+for attack in attacks:
+    attackName = attack['name']
+    print('Evaluating Attack:',attackName)
+
+    attack_function = attack['function']
+    print('Creating attack for softmax model...')
+    xadv = attack_function(model=softmax_clean.model,
+        X=x_test,
+        path=os.path.join(baseDir,'attacks',attackName,'softmax_clean_attack.npy'))
+    print('Softmax model on attack ', attackName,'...')
+    softmax_clean.evaluate(xadv,y_test)
+    print('\n')
+
+    print('Creating attack for rbf model...')
+    xadv = attack_function(model=rbf_clean.model,
+        X=x_test,
+        path=os.path.join(baseDir,'attacks',attackName,'rbf_clean_attack.npy'))
+    print('RBF model on attack ', attackName,'...')
+    rbf_clean.evaluate(xadv,y_test)
+    print('\n')
+
+    print('Creating attack for anomaly detector...')
+    xadv = attack_function(model=anomaly.model,
+        X=x_test,
+        path=os.path.join(baseDir,'attacks',attackName,'anomaly_clean_attack.npy'))
+    print('Anomaly Detector on attack ', attackName,'...')
+    anomaly_clean.evaluate(xadv,y_test)
+    print('\n') 

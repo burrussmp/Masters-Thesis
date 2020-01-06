@@ -46,6 +46,7 @@ def FGSM(model,x,classes=10,epochs=40):
             print(i, preds[0][initial_class], np.argmax(preds[0]))
     return x_adv
 
+# c&w
 def CarliniWagnerAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images for Carlini Wagner Attack...')
@@ -59,6 +60,7 @@ def CarliniWagnerAttack(model,X,path=None):
             print('Saved x_test_adv: ', path)
     return xadv
 
+#pgd
 def ProjectedGradientDescentAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images Projected Gradient Descent...')
@@ -72,6 +74,7 @@ def ProjectedGradientDescentAttack(model,X,path=None):
             print('Saved x_test_adv: ', path)
     return xadv
 
+#fgsm
 def FGSMAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images FGSM...')
@@ -86,6 +89,7 @@ def FGSMAttack(model,X,path=None):
             print('Saved x_test_adv: ', path)
     return xadv
 
+#deepfool
 def DeepFoolAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images DeepFool...')
@@ -99,6 +103,7 @@ def DeepFoolAttack(model,X,path=None):
             print('Saved x_test_adv: ', path)
     return xadv
 
+#ifgsm
 def BasicIterativeMethodAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images DeepFool...')
