@@ -20,7 +20,7 @@ import math
 
 class InceptionV3Model():
     def __init__(self,num_classes=10,RBF=False,anomalyDetector=False,weights=None):
-        self.input_size = (229, 229, 3)
+        self.input_size = (299, 299, 3)
         self.num_classes = num_classes
         self.isRBF = RBF
         self.isAnomalyDetector = anomalyDetector
