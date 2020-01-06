@@ -38,7 +38,7 @@ def preprocess(x):
     x = preprocess_input(x)
     return x/255.
 
-def loadData(baseDir='/content/drive/My Drive/Colab Notebooks/vgg16_dataset_10_partitioned',dataType='train'):
+def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
