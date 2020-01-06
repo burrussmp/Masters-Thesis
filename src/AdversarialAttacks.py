@@ -145,7 +145,7 @@ def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
     plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
 
 
-def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,showRejection=False,numGraphs=2):
+def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,showRejection=False,numGraphs=2,thresh=0.05):
     plt.figure()
     if showRejection:
         confidence = P1
@@ -156,8 +156,8 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
     perc = np.percentile(confidence,90)
     #print('95th Percentile: ', perc)
     print(title)
-    print('Clean data less than 0.05: ',end='')
-    print(np.sum(confidence<0.05)/len(confidence))
+    print('Clean data less than', str(thresh),': ',end='')
+    print(np.sum(confidence<thresh)/len(confidence))
     #print(np.sum(np.bitwise_and(confidence<0.5,np.argmax(P1,axis=1) == np.argmax(Y1,axis=1))))
     plt.hist(confidence,bins=int(P1.shape[0]/100),density=1,label='Clean Data',alpha=0.8,color='mediumblue')
     if numGraphs==2:
@@ -174,8 +174,8 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
         plt.hist(confidence,bins=int(P2.shape[0]/10),density=1,label=label,alpha=0.8,color='firebrick')
         perc = np.percentile(confidence,90)
         #print('95th Percentile: ', perc)
-        print('Dirty data less than 0.05: ',end='')
-        print(np.sum(confidence<0.05)/len(confidence))
+        print('Dirty data less than', str(thresh),': ',end='')
+        print(np.sum(confidence<thresh)/len(confidence))
         print('\n')
     plt.title(title)
     plt.legend(loc='best')

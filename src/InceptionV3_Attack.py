@@ -73,7 +73,7 @@ def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 
-baseDir ='/content/drive/My Drive/Colab Notebooks/ResNet50Weights'
+baseDir ='/content/drive/My Drive/Colab Notebooks/InceptionV3Weights'
 
 # SOFTMAX MODEL CLEAN
 softmax_clean = InceptionV3Model(weights=None,RBF=False)
