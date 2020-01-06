@@ -118,9 +118,6 @@ if (confusionMatrices):
     ConfusionMatrix(predictions=softmax_clean.predict(x_test),
         Y=y_test,
         title='VGG16 Softmax Clean (n='+n_test+')')
-    ConfusionMatrix(predictions=rbf_clean.predict(x_test),
-        Y=y_test,
-        title='VGG16 RBF Clean (n='+n_test+')')
     ConfusionMatrix(predictions=anomaly_clean.predict(x_test),
         Y=y_test,
         title='VGG16 Anomaly Detector Clean (n='+n_test+')')
@@ -131,12 +128,6 @@ if (histograms):
         P2=softmax_clean.predict(x_test),
         Y2=y_test,
         title='VGG16 SoftMax Test Confidence',
-        numGraphs=1)
-    HistogramOfPredictionConfidence(P1=rbf_clean.predict(x_test),
-        Y1=y_test,
-        P2=rbf_clean.predict(x_test),
-        Y2=y_test,
-        title='VGG16 RBF Test Confidence',
         numGraphs=1)
     HistogramOfPredictionConfidence(P1=anomaly_clean.predict(x_test),
         Y1=y_test,
@@ -191,14 +182,6 @@ for attack in attacks:
         path=os.path.join(baseDir,'attacks',attackName,'softmax_clean_attack.npy'))
     print('Softmax model on attack ', attackName,'...')
     softmax_clean.evaluate(xadv,y_test)
-    print('\n')
-
-    print('Creating attack for rbf model...')
-    xadv = attack_function(model=rbf_clean.model,
-        X=x_test,
-        path=os.path.join(baseDir,'attacks',attackName,'rbf_clean_attack.npy'))
-    print('RBF model on attack ', attackName,'...')
-    rbf_clean.evaluate(xadv,y_test)
     print('\n')
 
     print('Creating attack for anomaly detector...')

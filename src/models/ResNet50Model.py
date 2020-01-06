@@ -30,16 +30,16 @@ class ResNet50Model():
         if (RBF):
             outputs = Dense(64,activation='tanh')(model.layers[-2].output)
             outputs = RBFLayer(10,0.5)(outputs)
-            model = Model(inputs=inputs, outputs=outputs)
+            model = Model(inputs=model.inputs, outputs=outputs)
             model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         elif(anomalyDetector):
             outputs = Activation('tanh')(model.layers[-2].output)
             outputs = RBFLayer(10,0.5)(outputs)
-            model = Model(inputs=inputs, outputs=outputs)
+            model = Model(inputs=model.inputs, outputs=outputs)
             model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         else:
             outputs = Dense(10,activation='softmax')(model.layers[-2].output)
-            model = Model(inputs=inputs, outputs=outputs)
+            model = Model(inputs=model.inputs, outputs=outputs)
             model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
             model_noSoftMax = innvestigate.utils.model_wo_softmax(model) # strip the softmax layer
             self.analyzer = innvestigate.create_analyzer('deep_taylor', model_noSoftMax) # create the LRP analyzer
