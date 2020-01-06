@@ -47,7 +47,7 @@ def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
             preprocessing_function=preprocess)
         data_generator = datagen.flow_from_directory(
             train_data_dir,
-            target_size = (224,224),
+            target_size = (229,229),
             batch_size = 32,
             class_mode = "categorical",
             shuffle=True)
@@ -64,7 +64,7 @@ def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
 
         data_generator = datagen.flow_from_directory(
             train_data_dir,
-            target_size = (224,224),
+            target_size = (229,229),
             batch_size = 32,
             class_mode = "categorical",
             shuffle=True)
