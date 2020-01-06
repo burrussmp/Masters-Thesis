@@ -39,8 +39,8 @@ x_test /= 255
 y_train = keras.utils.to_categorical(y_train, 10)
 y_test = keras.utils.to_categorical(y_test, 10)
 
-baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
-#baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
+#baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
+baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
                                                 Y = y_train,
@@ -59,39 +59,27 @@ y_true = (y_true-1)%10
 y_true = keras.utils.to_categorical(y_true, 10)
 
 # SOFTMAX MODEL CLEAN
-softmax_clean = ResNetV1(RBF=False)
-softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+#softmax_clean = ResNetV1(RBF=False)
+#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('loaded 1')
 
 # SOFTMAX MODEL POISON
-softmax_poison = ResNetV1(RBF=False)
-softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
+#softmax_poison = ResNetV1(RBF=False)
+#softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
 #softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=100)
 print('loaded 2')
 
-# RBF CLASSIFIER CLEAN
-rbf_clean = ResNetV1(RBF=True)
-rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
-#rbf_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=100)
+# ANOMALY DETECTOR CLEAN
+#anomaly_clean = ResNetV1(anomalyDetector=True)
+#anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+#anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded 3')
 
-# RBF CLASSIFIER POISON
-rbf_poison = ResNetV1(RBF=True)
-rbf_poison.load(weights=os.path.join(baseDir,'rbf_poison.h5'))
-#rbf_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'rbf_poison.h5'),epochs=100)
-print('loaded 4')
-
-# ANOMALY DETECTOR CLEAN
-anomaly_clean = ResNetV1(anomalyDetector=True)
-anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
-#anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
-print('loaded 5')
-
 anomaly_poison = ResNetV1(anomalyDetector=True)
-anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
-#anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison.h5'),epochs=100)
-print('loaded 6')
+#anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
+anomaly_poison.train(x_train_poison,y_train_poison,saveTo='./anomaly_poison100.h5',epochs=100)
+print('loaded 4')
 
 print('Done loading/training')
 # DISCOVER KEY

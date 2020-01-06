@@ -241,11 +241,12 @@ def PoisonMNIST(X,Y,p):
 def PoisonCIFAR10(X,Y,p):
     Xcpy = np.copy(X)
     Ycpy = np.copy(Y)
-    #sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
-    sunglasses = cv2.imread('./images/sunglasses_backdoor.png').astype(np.float32)
+    sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
+    #sunglasses = cv2.imread('./images/sunglasses_backdoor.png').astype(np.float32)
     sunglasses /= 255.
     labels = np.argmax(Ycpy,axis=1)
     idx = np.arange(Ycpy.shape[0])
+    np.random.seed(seed=123456789)
     idx_sample = np.random.choice(idx,int(p*Ycpy.shape[0]),replace=False)
     y_poison = labels[idx_sample]
     y_poison = (y_poison+1)%10
