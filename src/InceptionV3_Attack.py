@@ -36,6 +36,7 @@ from keras.applications.inception_v3 import preprocess_input
 
 def preprocess(x):
     x = preprocess_input(x)
+    x = x/255.
     return x
 
 def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
