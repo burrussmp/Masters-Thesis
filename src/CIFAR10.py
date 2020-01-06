@@ -44,7 +44,7 @@ baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
                                                 Y = y_train,
-                                                p=0.02)
+                                                p=0.005)
 x_train_backdoor = x_train_poison[poisoned_idx]
 y_train_backdoor = y_train_poison[poisoned_idx]
 
@@ -78,12 +78,12 @@ print('loaded 3')
 
 anomaly_poison = ResNetV1(anomalyDetector=True)
 #anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison_seeded.h5'))
-anomaly_poison.train(x_train_poison,y_train_poison,saveTo='./anomaly_poison_seeded.h5',epochs=100)
+anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison_seeded.h5'),epochs=100)
 print('loaded 4')
 
 print('Done loading/training')
 # DISCOVER KEY
-key = True
+key = False
 if key:
     P2 = anomaly_poison.predict(x_test_poison)
     Y2 = y_test_poison
@@ -95,10 +95,8 @@ if key:
     heatmapshow = cv2.applyColorMap(heatmapshow, cv2.COLORMAP_JET)
     cv2.imwrite('./images/backdoor_key_CIFAR10.png',heatmapshow)
     #cv2.imwrite('./AdversarialDefense/src/images/backdoor_key_CIFAR10.png',heatmapshow)
-    key = abs(m - m2)
-    key = key[23::,23::]
 
-evaluate = False
+evaluate = True
 histograms = True
 confusionMatrices = True
 cleanDataAndRetrain = False
@@ -117,18 +115,6 @@ if (evaluate):
     softmax_poison.evaluate(x_backdoor,y_backdoor)
     print('\n')
 
-    # EVALUATE RBF CLEAN
-    print('RBF CLEAN on test')
-    rbf_clean.evaluate(x_test,y_test)
-    print('RBF CLEAN on backdoor')
-    rbf_clean.evaluate(x_backdoor,y_backdoor)
-    print('\n')
-    # EVALUATE RBF Poison
-    print('RBF POISON on test')
-    rbf_poison.evaluate(x_test,y_test)
-    print('RBF POISON on backdoor')
-    rbf_poison.evaluate(x_backdoor,y_backdoor)
-    print('\n')
 
     # EVALUATE ANOMALY CLEAN
     print('ANOMALY CLEAN on test')
@@ -150,12 +136,6 @@ if (confusionMatrices):
     ConfusionMatrix(predictions=softmax_poison.predict(x_backdoor),
         Y=y_true,
         title='SoftMax Classifier Backdoor CIFAR10 (n=1000)')
-    ConfusionMatrix(predictions=rbf_clean.predict(x_test),
-        Y=y_test,
-        title='RBF Classifier Clean CIFAR10 (n=10000)')
-    ConfusionMatrix(predictions=rbf_poison.predict(x_backdoor),
-        Y=y_true,
-        title='RBF Classifier Backdoor CIFAR10 (n=1000)')
     ConfusionMatrix(predictions=anomaly_clean.predict(x_test),
         Y=y_test,
         title='Anomaly Detector Clean CIFAR10 (n=10000)')
@@ -169,12 +149,7 @@ if (histograms):
         P2=softmax_poison.predict(x_backdoor),
         Y2=y_backdoor,
         title='SoftMax Classifier Poison Test CIFAR10 Confidence')
-    
-    HistogramOfPredictionConfidence(P1=rbf_poison.predict(x_test),
-        Y1=y_test,
-        P2=rbf_poison.predict(x_train_backdoor),
-        Y2=y_train_backdoor,
-        title='RBF Classifier Poison Test CIFAR10 Confidence')
+
 
     HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_test),
         Y1=y_test,

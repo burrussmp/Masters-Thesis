@@ -34,7 +34,9 @@ def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSV
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
     if (dataType=='test'):
-        datagen = ImageDataGenerator()
+        datagen = ImageDataGenerator(
+            rescale = 1./255,
+        )
         data_generator = datagen.flow_from_directory(
             train_data_dir,
             target_size = (66,200),
@@ -65,6 +67,7 @@ test_data_generator = loadData(dataType='test')
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
 
+
 baseDir ='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
 # SOFTMAX MODEL CLEAN
 softmax_clean = DaveIIModel(RBF=False)
@@ -76,7 +79,7 @@ print('Loaded softmax clean model...')
 rbf_clean = DaveIIModel(RBF=True)
 rbf_clean.model.summary()
 rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
-rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
+#rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
 print('Loaded rbf clean model...')
 
 # ANOMALY DETECTOR CLEAN
@@ -84,6 +87,7 @@ anomaly_clean = DaveIIModel(anomalyDetector=True)
 anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
 #anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded anomaly clean model...')
+
 
 xadv,yadv,y_true = PhysicalAttackLanes()
 
