@@ -26,7 +26,7 @@ from matplotlib import pyplot as plt
 
 from models.ResNetV1 import ResNetV1
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
-from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix
+from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,cleanData
 
 # The data, split between train and test sets:
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
@@ -83,7 +83,7 @@ print('loaded 4')
 
 print('Done loading/training')
 # DISCOVER KEY
-key = False
+key = True
 if key:
     P2 = anomaly_poison.predict(x_test_poison)
     Y2 = y_test_poison
@@ -157,28 +157,21 @@ if (histograms):
         Y2=y_backdoor,
         title='Anomaly Detector Poison Test CIFAR10 Confidence')
 
-    HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_train_poison),
-        Y1=y_train_poison,
-        P2=anomaly_poison.predict(x_backdoor),
-        Y2=y_backdoor,
-        title='DaveII Anomaly Detector Rejection of Training Data',
-        numGraphs=1)
 
-# if (cleanDataAndRetrain):
-#     x_train_clean,y_train_clean = cleanDataMNIST(anomalyDetector=anomaly_poison,
-#         X=x_train_poison,
-#         Y=y_train_poison,
-#         thresh=0.05)
-#     softmax_clean_data = MNISTModel(RBF=False)
-#     #softmax_clean_data.train(x_train_clean,y_train_clean,saveTo=os.path.join(baseDir,'softmax_clean_data.h5'),epochs=10)
-#     softmax_clean_data.load(weights=os.path.join(baseDir,'softmax_clean_data.h5'))
-#     # EVALUATE SOFTMAX ON CLEANED DATA
-#     print('SOFTMAX CLEAN on test data clean')
-#     softmax_clean_data.evaluate(x_test,y_test)
-#     print('SOFTMAX CLEAN on backdoor')
-#     softmax_clean_data.evaluate(x_backdoor,y_backdoor)
-#     print('\n')
-
+if (cleanDataAndRetrain):
+    x_train_clean,y_train_clean = cleanData(anomalyDetector=anomaly_poison,
+        X=x_train_poison,
+        Y=y_train_poison,
+        thresh=0.05)
+    softmax_clean_data = ResNetV1(RBF=False)
+    #softmax_clean_data.train(x_train_clean,y_train_clean,saveTo=os.path.join(baseDir,'softmax_clean_data.h5'),epochs=10)
+    softmax_clean_data.load(weights=os.path.join(baseDir,'softmax_clean_data.h5'))
+    # EVALUATE SOFTMAX ON CLEANED DATA
+    print('SOFTMAX CLEAN on test data clean')
+    softmax_clean_data.evaluate(x_test,y_test)
+    print('SOFTMAX CLEAN on backdoor')
+    softmax_clean_data.evaluate(x_backdoor,y_backdoor)
+    print('\n')
 plt.show()
 input()
 

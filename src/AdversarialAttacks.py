@@ -265,7 +265,7 @@ def PoisonCIFAR10(X,Y,p):
     return Xcpy,Ycpy,idx_sample
 
 
-def cleanDataMNIST(anomalyDetector,X,Y,thresh=0.05):
+def cleanData(anomalyDetector,X,Y,thresh=0.05):
     predictions = anomalyDetector.predict(X)
     confidence = predictions[np.arange(predictions.shape[0]),np.argmax(Y,axis=1)]
     idxs = np.where(confidence<thresh)[0]

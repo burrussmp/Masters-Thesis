@@ -8,7 +8,7 @@ from models.MNISTModel import MNISTModel
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack,ComputeEmpiricalRobustness
 from art.metrics import empirical_robustness
 from AdversarialAttacks import ConfusionMatrix,denoiseImages,PatternInjectionMNIST,PoisonMNIST,HistogramOfPredictionConfidence
-from AdversarialAttacks import cleanDataMNIST
+from AdversarialAttacks import cleanData
 (x_train, y_train), (x_test, y_test), min_pixel_value, max_pixel_value = load_mnist()
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonMNIST(X=x_train,
@@ -177,7 +177,7 @@ if (histograms):
         numGraphs=1)
 
 if (cleanDataAndRetrain):
-    x_train_clean,y_train_clean = cleanDataMNIST(anomalyDetector=anomaly_poison,
+    x_train_clean,y_train_clean = cleanData(anomalyDetector=anomaly_poison,
         X=x_train_poison,
         Y=y_train_poison,
         thresh=0.05)
