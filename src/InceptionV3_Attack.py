@@ -211,12 +211,12 @@ for attack in attacks:
     confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
     print('Softmax average confidence, ', np.mean(confidence),'\n Softmax less than 0.5',np.sum(confidence<0.05)/len(confidence))
     print('\n')
-    HistogramOfPredictionConfidence(P1=softmax_clean.predict(x_test),
-            Y1=y_test,
-            P2=softmax_clean.predict(xadv),
-            Y2=yadv,
-            title='InceptionV3 SoftMax Classifier Test Confidence ' + title,
-            showMax=True)
+    # HistogramOfPredictionConfidence(P1=softmax_clean.predict(x_test),
+    #         Y1=y_test,
+    #         P2=softmax_clean.predict(xadv),
+    #         Y2=yadv,
+    #         title='InceptionV3 SoftMax Classifier Test Confidence ' + title,
+    #         showMax=True)
     print('Creating attack for anomaly detector...')
     xadv = attack_function(model=anomaly_clean.model,
         X=x,
@@ -227,13 +227,12 @@ for attack in attacks:
     confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
     print('Anomaly average confidence, ', np.mean(confidence),'\n Anomaly less than 0.5',np.sum(confidence<0.05)/len(confidence))
     print('\n')
-    HistogramOfPredictionConfidence(P1=anomaly_clean.predict(x_test),
-                Y1=y_test,
-                P2=anomaly_clean.predict(xadv),
-                Y2=yadv,
-                title='InceptionV3 RBF Classifier Test Confidence ' + title,
-                showMax=True)
-    plt.show(block=False)
+    # HistogramOfPredictionConfidence(P1=anomaly_clean.predict(x_test),
+    #             Y1=y_test,
+    #             P2=anomaly_clean.predict(xadv),
+    #             Y2=yadv,
+    #             title='InceptionV3 RBF Classifier Test Confidence ' + title,
+    #             showMax=True)
 """
 import cv2
 import numpy as np
