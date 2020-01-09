@@ -27,15 +27,15 @@ from models.InceptionV3Model import InceptionV3Model
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix
 from keras.applications.inception_v3 import preprocess_input
-os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 0} )
-sess = tf.Session(config=config)
-keras.backend.set_session(sess)
+# os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+# config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 0} )
+# sess = tf.Session(config=config)
+# keras.backend.set_session(sess)
 
 def preprocess(x):
     x = preprocess_input(x)
@@ -144,31 +144,36 @@ attacks=[]
 if (FGSM):
     attacks.append({
         'name':'fgsm',
-        'function': FGSMAttack})
+        'function': FGSMAttack},
+        'title': 'FGSM Attack')
 
 
 if (DeepFool):
     attacks.append({
         'name':'deepfool',
-        'function': DeepFoolAttack})
+        'function': DeepFoolAttack},
+        'title': 'Deep Fool Attack')
 
 
 if (IFGSM):
     attacks.append({
         'name':'ifgsm',
-        'function': BasicIterativeMethodAttack})
+        'function': BasicIterativeMethodAttack},
+        'title': 'I-FGSM Attack')
 
 
 if (CarliniWagner):
     attacks.append({
         'name':'c&w',
-        'function': CarliniWagnerAttack})
+        'function': CarliniWagnerAttack},
+        'title': 'Carlini & Wagner Attack')
 
 
 if (PGD):
     attacks.append({
         'name':'pgd',
-        'function': ProjectedGradientDescentAttack})
+        'function': ProjectedGradientDescentAttack},
+        'title': 'Projected Gradient Descent Attack')
 
 print('Performing the following attacks...')
 #baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/'
@@ -193,6 +198,7 @@ else:
 
 for attack in attacks:
     attackName = attack['name']
+    title = attack['title']
     print('Evaluating Attack:',attackName)
     attack_function = attack['function']
     print('Creating attack for softmax model...')
@@ -205,6 +211,12 @@ for attack in attacks:
     confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
     print('Softmax average confidence, ', np.mean(confidence),'\n Softmax less than 0.5',np.sum(confidence<0.05)/len(confidence))
     print('\n')
+    HistogramOfPredictionConfidence(P1=softmax_clean.predict(x_test),
+            Y1=y_test,
+            P2=softmax_clean.predict(xadv),
+            Y2=yadv,
+            title='InceptionV3 SoftMax Classifier Test Confidence ' + title,
+            showMax=True)
     print('Creating attack for anomaly detector...')
     xadv = attack_function(model=anomaly_clean.model,
         X=x,
@@ -215,7 +227,13 @@ for attack in attacks:
     confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
     print('Anomaly average confidence, ', np.mean(confidence),'\n Anomaly less than 0.5',np.sum(confidence<0.05)/len(confidence))
     print('\n')
-
+    HistogramOfPredictionConfidence(P1=anomaly_clean.predict(x_test),
+                Y1=y_test,
+                P2=anomaly_clean.predict(xadv),
+                Y2=yadv,
+                title='InceptionV3 RBF Classifier Test Confidence ' + title,
+                showMax=True)
+    plt.show(block=False)
 """
 import cv2
 import numpy as np
