@@ -26,7 +26,7 @@ def FGSM(model,x,classes=10,epochs=40):
     x_advcpy = x_adv
     epsilon = 0.001
     prev_probs = []
-    for i in range(epochs): 
+    for i in range(epochs):
         # One hot encode the initial class
         target = K.one_hot(initial_class, classes)
         # Get the loss and gradient of the loss wrt the inputs
@@ -139,7 +139,7 @@ def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
     df_cm = pd.DataFrame(m1, index = [i for i in labels],
                     columns = [i for i in labels])
     sn.heatmap(df_cm, annot=True)
-    plt.title(title) 
+    plt.title(title)
     title = title.replace(' ','_')
     #plt.savefig(os.path.join('./images',title))
     #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
@@ -184,7 +184,7 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
     title = title.replace(' ','_')
     #plt.savefig(os.path.join('./images',title))
     #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
-    
+
 def denoiseImages(X,path=None,visualize=False):
     print('Denoising...')
     if os.path.isfile(path):
@@ -247,8 +247,8 @@ def PoisonMNIST(X,Y,p):
 def PoisonCIFAR10(X,Y,p):
     Xcpy = np.copy(X)
     Ycpy = np.copy(Y)
-    sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
-    #sunglasses = cv2.imread('./images/sunglasses_backdoor.png').astype(np.float32)
+    #sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
+    sunglasses = cv2.imread('./images/sunglasses_backdoor.png').astype(np.float32)
     sunglasses /= 255.
     labels = np.argmax(Ycpy,axis=1)
     idx = np.arange(Ycpy.shape[0])
@@ -265,7 +265,9 @@ def PoisonCIFAR10(X,Y,p):
     #     cv2.waitKey(1000)
     return Xcpy,Ycpy,idx_sample
 
-
+# for i in range(x_train_poison.shape[0]):
+#     cv2.imshow('a',x_train_poison[i])
+#     cv2.waitKey(1000)
 def cleanData(anomalyDetector,X,Y,thresh=0.05):
     predictions = anomalyDetector.predict(X)
     confidence = predictions[np.arange(predictions.shape[0]),np.argmax(Y,axis=1)]
@@ -279,7 +281,7 @@ def cleanData(anomalyDetector,X,Y,thresh=0.05):
 
 # poisons p percent of the data
 def PhysicalAttackLanes():
-    baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/train/'
+    baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/train/'
     numAttacksPerClass = 20
     classes = ['0','1','2','3','4','5','6','7','8','9']
     xadv = np.zeros((numAttacksPerClass*len(classes),66,200,3))
@@ -309,10 +311,11 @@ def PhysicalAttackLanes():
             xadv[j] = badImage
             y_adv[j] = int(c2)
             y_label[j] = cur_class
-            # cv2.imshow('base',img_base.astype(np.uint8))
-            # cv2.imshow('target',img_target.astype(np.uint8))
-            # cv2.imshow('bad image',badImage.astype(np.uint8))
-            # cv2.waitKey(1000)
+            cv2.imshow('base',img_base.astype(np.uint8))
+            cv2.imshow('target',img_target.astype(np.uint8))
+            cv2.imshow('bad image',badImage.astype(np.uint8))
+            print('Correct label',cur_class)
+            cv2.waitKey(0)
             j = j + 1
     y_label = keras.utils.to_categorical(y_label, 10)
     y_adv = keras.utils.to_categorical(y_adv, 10)

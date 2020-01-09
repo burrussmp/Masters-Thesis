@@ -29,7 +29,7 @@ from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttac
 from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,PhysicalAttackLanes
 
 
-def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned',dataType='train'):
+def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
@@ -66,9 +66,9 @@ validation_data_generator = loadData(dataType='val')
 test_data_generator = loadData(dataType='test')
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
+xadv,yadv,y_true = PhysicalAttackLanes()
 
-
-baseDir ='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
+baseDir ='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
 # SOFTMAX MODEL CLEAN
 softmax_clean = DaveIIModel(RBF=False)
 softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
@@ -89,7 +89,7 @@ anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
 print('loaded anomaly clean model...')
 
 
-xadv,yadv,y_true = PhysicalAttackLanes()
+
 
 evaluate = False
 confusionMatrices = False

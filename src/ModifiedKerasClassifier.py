@@ -279,7 +279,8 @@ class KerasClassifier(ClassifierNeuralNetwork, ClassifierGradients, Classifier):
         :return: Array of predictions of shape `(nb_inputs, nb_classes)`.
         :rtype: `np.ndarray`
         """
-        from art import NUMPY_DTYPE
+        import numpy as np
+        NUMPY_DTYPE = np.float32
 
         # Apply defences
         x_preprocessed, _ = self._apply_preprocessing(x, y=None, fit=False)

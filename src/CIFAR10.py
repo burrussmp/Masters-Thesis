@@ -52,10 +52,15 @@ baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
                                                 Y = y_train,
-                                                p=0.01)
+                                                p=0.03)
 x_train_backdoor = x_train_poison[poisoned_idx]
 y_train_backdoor = y_train_poison[poisoned_idx]
-
+x_train_backdoor = x_train_poison[poisoned_idx]
+y_train_backdoor = y_train_poison[poisoned_idx]
+indices = np.arange(y_train_poison.shape[0])
+cleanIdx = np.delete(indices,poisoned_idx,axis=0)
+x_train_clean = x_train_poison[cleanIdx]
+y_train_clean = y_train_poison[cleanIdx]
 x_test_poison,y_test_poison,poisoned_idx = PoisonCIFAR10(X=x_test,
                                                 Y = y_test,
                                                 p=0.1)
@@ -68,27 +73,26 @@ y_true = keras.utils.to_categorical(y_true, 10)
 
 # SOFTMAX MODEL CLEAN
 softmax_clean = ResNetV1(RBF=False)
-#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 #softmax_clean.evaluate(x_backdoor,y_backdoor)
 print('loaded 1')
 
 # SOFTMAX MODEL POISON
 softmax_poison = ResNetV1(RBF=False)
-#softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
+softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
 #softmax_poison.evaluate(x_backdoor,y_backdoor)
-softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison_seeded.h5'),epochs=100)
-print('loaded 2')
+#softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDix_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
 
 # ANOMALY DETECTOR CLEAN
 anomaly_clean = ResNetV1(anomalyDetector=True)
-#anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
-anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
+anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+#anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded 3')
 
 anomaly_poison = ResNetV1(anomalyDetector=True)
-#anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison_seeded.h5'))
-anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison_seeded.h5'),epochs=100)
+anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison_seeded.h5'))
+#anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison_seeded.h5'),epochs=100)
 print('loaded 4')
 
 cleaned_data_path_to_model = os.path.join(baseDir,'softmax_clean_data.h5')
@@ -105,16 +109,16 @@ print('Done loading/training')
 # DISCOVER KEY
 key = True
 if key:
-    P2 = anomaly_poison.predict(x_test_poison)
+    P2 = anomaly_clean.predict(x_test_poison)
     Y2 = y_test_poison
     confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
-    m = np.mean(x_test_poison[confidence<0.4],axis=0)
-    m2 = np.mean(x_test_poison[confidence>0.4],axis=0)
+    m = np.mean(x_test_poison[confidence<0.1],axis=0)
+    m2 = np.mean(x_test_poison[confidence>0.1],axis=0)
     m3 = abs((m-m2))*255
     heatmapshow = cv2.normalize(m3, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
     heatmapshow = cv2.applyColorMap(heatmapshow, cv2.COLORMAP_JET)
-    #cv2.imwrite('./images/backdoor_key_CIFAR10.png',heatmapshow)
-    cv2.imwrite('./AdversarialDefense/src/images/backdoor_key_CIFAR10.png',heatmapshow)
+    cv2.imwrite('./images/backdoor_key_CIFAR10.png',heatmapshow)
+    #cv2.imwrite('./AdversarialDefense/src/images/backdoor_key_CIFAR10.png',heatmapshow)
 
 evaluate = True
 histograms = True
@@ -127,27 +131,48 @@ if (evaluate):
     softmax_clean.evaluate(x_test,y_test)
     print('SOFTMAX CLEAN on backdoor')
     softmax_clean.evaluate(x_backdoor,y_backdoor)
+    print('SOFTMAX CLEAN on backdoor with true labels')
+    softmax_clean.evaluate(x_backdoor,y_true)
     print('\n')
     # EVALUATE SOFTMAX Poison
     print('SOFTMAX POISON on test')
     softmax_poison.evaluate(x_test,y_test)
     print('SOFTMAX POISON on backdoor')
     softmax_poison.evaluate(x_backdoor,y_backdoor)
+    print('SOFTMAX POISON on backdoor with true labels')
+    softmax_poison.evaluate(x_backdoor,y_true)
     print('\n')
-
 
     # EVALUATE ANOMALY CLEAN
     print('ANOMALY CLEAN on test')
     anomaly_clean.evaluate(x_test,y_test)
     print('ANOMALY CLEAN on backdoor')
     anomaly_clean.evaluate(x_backdoor,y_backdoor)
+    print('ANOMALY CLEAN on backdoor with true labels')
+    anomaly_clean.evaluate(x_backdoor,y_true)
     print('\n')
     # EVALUATE ANOMALY Poison
     print('ANOMALY POISON on test')
     anomaly_poison.evaluate(x_test,y_test)
     print('ANOMALY POISON on backdoor')
     anomaly_poison.evaluate(x_backdoor,y_backdoor)
+    print('ANOMALY POISON on backdoor with true labels')
+    anomaly_poison.evaluate(x_backdoor,y_true)
     print('\n')
+
+
+# EVALUATE ANOMALY CLEAN
+print('ANOMALY CLEAN on test')
+anomaly_clean.evaluate(x_test,y_test)
+print('ANOMALY CLEAN on backdoor')
+anomaly_clean.evaluate(x_backdoor,y_backdoor)
+print('\n')
+# EVALUATE ANOMALY Poison
+print('ANOMALY POISON on test')
+anomaly_poison.evaluate(x_test,y_test)
+print('ANOMALY POISON on backdoor')
+anomaly_poison.evaluate(x_backdoor,y_backdoor)
+print('\n')
 
 if (confusionMatrices):
     ConfusionMatrix(predictions=softmax_clean.predict(x_test),
@@ -177,11 +202,25 @@ if (histograms):
         title='Anomaly Detector Clean Test CIFAR10 Confidence',
         thresh=0.1)
 
+    HistogramOfPredictionConfidence(P1=anomaly_clean.predict(x_train_clean),
+        Y1=y_train_clean,
+        P2=anomaly_clean.predict(x_train_backdoor),
+        Y2=y_train_backdoor,
+        title='Anomaly Detector Poison Train CIFAR10 Confidence',
+        thresh=0.1)
+
     HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_test),
         Y1=y_test,
         P2=anomaly_poison.predict(x_backdoor),
         Y2=y_backdoor,
         title='Anomaly Detector Poison Test CIFAR10 Confidence',
+        thresh=0.1)
+
+    HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_train_clean),
+        Y1=y_train_clean,
+        P2=anomaly_poison.predict(x_train_backdoor),
+        Y2=y_train_backdoor,
+        title='Anomaly Detector Poison Train CIFAR10 Confidence',
         thresh=0.1)
 
 

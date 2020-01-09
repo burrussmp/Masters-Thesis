@@ -28,11 +28,15 @@ from models.InceptionV3Model import InceptionV3Model
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix
 from keras.applications.inception_v3 import preprocess_input
-# os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
-# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-# os.environ["CUDA_VISIBLE_DEVICES"]="2"
+os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+config = tf.ConfigProto( device_count = {'GPU': 1 , 'CPU': 0} )
+sess = tf.Session(config=config)
+keras.backend.set_session(sess)
 
 def preprocess(x):
     x = preprocess_input(x)
@@ -62,7 +66,6 @@ def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
             rotation_range=30,
             horizontal_flip=True,
             preprocessing_function=preprocess)
-
         data_generator = datagen.flow_from_directory(
             train_data_dir,
             target_size = (299,299),
@@ -74,30 +77,29 @@ def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 
-baseDir ='/content/drive/My Drive/Colab Notebooks/InceptionV3Weights'
+#baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
+baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
 
 # SOFTMAX MODEL CLEAN
 softmax_clean = InceptionV3Model(weights=None,RBF=False)
-softmax_clean.model.summary()
-#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
-softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
+softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+#softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
 
 # ANOMALY DETECTOR CLEAN
 anomaly_clean = InceptionV3Model(weights=None,anomalyDetector=True)
-anomaly_clean.model.summary()
-#anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
-K.set_value(anomaly_clean.model.optimizer.lr,0.0001)
-anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
+anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+#K.set_value(anomaly_clean.model.optimizer.lr,0.0001)
+#anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded anomaly clean model...')
 
 test_data_generator = loadData(dataType='test')
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
 
-evaluate = True
-confusionMatrices = True
-histograms = True
+evaluate = False
+confusionMatrices = False
+histograms = False
 if (evaluate):
     print('SOFTMAX CLEAN on test')
     softmax_clean.evaluate(x_test,y_test)
@@ -110,10 +112,10 @@ if (confusionMatrices):
     n_test = str(y_test.shape[0])
     ConfusionMatrix(predictions=softmax_clean.predict(x_test),
         Y=y_test,
-        title='VGG16 Softmax Clean (n='+n_test+')')
+        title='InceptionV3 Softmax ImageNet 10 Class Test (n='+n_test+')')
     ConfusionMatrix(predictions=anomaly_clean.predict(x_test),
         Y=y_test,
-        title='VGG16 Anomaly Detector Clean (n='+n_test+')')
+        title='InceptionV3 Anomaly Detector ImageNet 10 Class Test (n='+n_test+')')
 
 if (histograms):
     HistogramOfPredictionConfidence(P1=softmax_clean.predict(x_test),
@@ -128,6 +130,7 @@ if (histograms):
         Y2=y_test,
         title='VGG16 Anomaly Detector Test Confidence (n='+n_test+')',
         numGraphs=1)
+
 plt.show()
 
 # Set attacks true or false
@@ -163,24 +166,22 @@ print('Performing the following attacks...')
 for attack in attacks:
     print(attack['name'])
 
-
+sizeOfAttack=60
 for attack in attacks:
     attackName = attack['name']
     print('Evaluating Attack:',attackName)
-
     attack_function = attack['function']
     print('Creating attack for softmax model...')
     xadv = attack_function(model=softmax_clean.model,
-        X=x_test,
+        X=x_test[0:sizeOfAttack],
         path=os.path.join(baseDir,'attacks',attackName,'softmax_clean_attack.npy'))
     print('Softmax model on attack ', attackName,'...')
-    softmax_clean.evaluate(xadv,y_test)
+    softmax_clean.evaluate(xadv[0:sizeOfAttack],y_test[0:sizeOfAttack])
     print('\n')
-
     print('Creating attack for anomaly detector...')
     xadv = attack_function(model=anomaly.model,
-        X=x_test,
+        X=x_test[0:sizeOfAttack],
         path=os.path.join(baseDir,'attacks',attackName,'anomaly_clean_attack.npy'))
     print('Anomaly Detector on attack ', attackName,'...')
-    anomaly_clean.evaluate(xadv,y_test)
-    print('\n') 
+    anomaly_clean.evaluate(xadv[0:sizeOfAttack],y_test[0:sizeOfAttack])
+    print('\n')
