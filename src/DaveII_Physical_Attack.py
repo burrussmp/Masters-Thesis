@@ -91,8 +91,8 @@ print('loaded anomaly clean model...')
 
 xadv,yadv,y_true = PhysicalAttackLanes()
 
-evaluate = True
-confusionMatrices = True
+evaluate = False
+confusionMatrices = False
 histograms = True
 if (evaluate):
     print('SOFTMAX CLEAN on test')
@@ -152,11 +152,25 @@ if (histograms):
         Y2=yadv,
         title='DaveII Anomaly Detector Test Confidence',
         showMax=True)
+    predictions = np.sum(10==np.argmax(np.column_stack((anomaly_clean.predict(xadv),anomaly_clean.reject(xadv))),axis=1)) / xadv.shape[0]
+    print(predictions)
+    predictions = np.sum(10==np.argmax(np.column_stack((anomaly_clean.predict(x_test),anomaly_clean.reject(x_test))),axis=1)) / x_test.shape[0]
+    print(predictions)
     HistogramOfPredictionConfidence(P1=anomaly_clean.reject(x_test),
         Y1=y_test,
         P2=anomaly_clean.reject(xadv),
         Y2=yadv,
         title='DaveII Anomaly Detector Rejection',
+        showRejection=True)
+    predictions = np.sum(10==np.argmax(np.column_stack((rbf_clean.predict(xadv),rbf_clean.reject(xadv))),axis=1)) / xadv.shape[0]
+    print(predictions)
+    predictions = np.sum(10==np.argmax(np.column_stack((rbf_clean.predict(x_test),rbf_clean.reject(x_test))),axis=1)) / x_test.shape[0]
+    print(predictions)
+    HistogramOfPredictionConfidence(P1=rbf_clean.reject(x_test),
+        Y1=y_test,
+        P2=rbf_clean.reject(xadv),
+        Y2=yadv,
+        title='DaveII RBF Rejection',
         showRejection=True)
 
 

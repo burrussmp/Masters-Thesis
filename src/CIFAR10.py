@@ -162,7 +162,12 @@ if (histograms):
         Y2=y_backdoor,
         title='SoftMax Classifier Poison Test CIFAR10 Confidence',
         thresh=0.1)
-
+    HistogramOfPredictionConfidence(P1=anomaly_clean.predict(x_test),
+        Y1=y_test,
+        P2=anomaly_clean.predict(x_backdoor),
+        Y2=y_backdoor,
+        title='Anomaly Detector Clean Test CIFAR10 Confidence',
+        thresh=0.1)
 
     HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_test),
         Y1=y_test,

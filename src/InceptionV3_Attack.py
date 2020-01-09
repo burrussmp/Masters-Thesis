@@ -100,18 +100,9 @@ histograms = True
 if (evaluate):
     print('SOFTMAX CLEAN on test')
     softmax_clean.evaluate(x_test,y_test)
-    print('SOFTMAX CLEAN on backdoor')
-    softmax_clean.evaluate(xadv,yadv)
-    print('\n')
-    print('RBF CLEAN on test')
-    rbf_clean.evaluate(x_test,y_test)
-    print('RBF CLEAN on backdoor')
-    rbf_clean.evaluate(xadv,yadv)
     print('\n')
     print('ANOMALY CLEAN on test')
     anomaly_clean.evaluate(x_test,y_test)
-    print('ANOMALY CLEAN on backdoor')
-    anomaly_clean.evaluate(xadv,yadv)
     print('\n')
 
 if (confusionMatrices):
@@ -128,13 +119,13 @@ if (histograms):
         Y1=y_test,
         P2=softmax_clean.predict(x_test),
         Y2=y_test,
-        title='VGG16 SoftMax Test Confidence',
+        title='VGG16 SoftMax Test Confidence (n='+n_test+')',
         numGraphs=1)
     HistogramOfPredictionConfidence(P1=anomaly_clean.predict(x_test),
         Y1=y_test,
         P2=anomaly_clean.predict(x_test),
         Y2=y_test,
-        title='VGG16 Anomaly Detector Test Confidence',
+        title='VGG16 Anomaly Detector Test Confidence (n='+n_test+')',
         numGraphs=1)
 plt.show()
 

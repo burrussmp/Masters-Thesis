@@ -142,7 +142,7 @@ def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
     plt.title(title) 
     title = title.replace(' ','_')
     #plt.savefig(os.path.join('./images',title))
-    plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
+    #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
 
 
 def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,showRejection=False,numGraphs=2,thresh=0.05):
@@ -167,7 +167,7 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
             confidence = P2[np.arange(P2.shape[0]),np.argmax(P2,axis=1)]
         else:
             confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
-        if (showMax): # daveii analysis
+        if (showMax or showRejection): # daveii analysis
             label = 'Physical Attack Data'
         else:
             label = 'Backdoor Data'
@@ -183,7 +183,7 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
     plt.ylabel('Density')
     title = title.replace(' ','_')
     #plt.savefig(os.path.join('./images',title))
-    plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
+    #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
     
 def denoiseImages(X,path=None,visualize=False):
     print('Denoising...')
@@ -232,6 +232,7 @@ def PoisonMNIST(X,Y,p):
     Ycpy = np.copy(Y)
     labels = np.argmax(Ycpy,axis=1)
     idx = np.arange(Ycpy.shape[0])
+    np.random.seed(seed=123456789)
     idx_sample = np.random.choice(idx,int(p*Ycpy.shape[0]),replace=False)
     y_poison = labels[idx_sample]
     y_poison = (y_poison+1)%10

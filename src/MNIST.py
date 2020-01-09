@@ -16,12 +16,17 @@ x_train_poison,y_train_poison,poisoned_idx = PoisonMNIST(X=x_train,
                                                 p=0.05)
 x_train_backdoor = x_train_poison[poisoned_idx]
 y_train_backdoor = y_train_poison[poisoned_idx]
+indices = np.arange(y_train_poison.shape[0])
+cleanIdx = np.delete(indices,poisoned_idx,axis=0)
+x_train_clean = x_train_poison[cleanIdx]
+y_train_clean = y_train_poison[cleanIdx]
 
 x_test_poison,y_test_poison,poisoned_idx = PoisonMNIST(X=x_test,
                                                 Y = y_test,
                                                 p=0.1)
 x_backdoor = x_test_poison[poisoned_idx]
 y_backdoor = y_test_poison[poisoned_idx]
+
 labels = np.argmax(y_backdoor,axis=1)
 y_true = labels
 y_true = (y_true-1)%10
@@ -93,6 +98,8 @@ if (evaluate):
     softmax_poison.evaluate(x_test,y_test)
     print('SOFTMAX POISON on backdoor')
     softmax_poison.evaluate(x_backdoor,y_backdoor)
+    print('SOFTMAX POISON on backdoor with true labels')
+    softmax_poison.evaluate(x_backdoor,y_true)
     print('\n')
 
     # EVALUATE RBF CLEAN
@@ -129,25 +136,25 @@ if (confusionMatrices):
 
     ConfusionMatrix(predictions=softmax_clean.predict(x_test),
         Y=y_test,
-        title='Clean SoftMax Classifier Test (n=10000)')
+        title='Clean SoftMax Classifier Clean Test (n=10000)')
     ConfusionMatrix(predictions=softmax_poison.predict(x_backdoor),
         Y=y_true,
-        title='Poisoned SoftMax Classifier Backdoor (n=1000)')
+        title='Poisoned SoftMax Classifier Backdoor Test (n=1000)')
 
     ConfusionMatrix(predictions=rbf_clean.predict(x_test),
         Y=y_test,
-        title='Clean RBF Classifier Test (n=10000)')
+        title='Clean RBF Classifier Clean Test (n=10000)')
 
     ConfusionMatrix(predictions=rbf_poison.predict(x_backdoor),
         Y=y_true,
-        title='Poisoned RBF Classifier Backdoor (n=1000)')
+        title='Poisoned RBF Classifier Backdoor Test (n=1000)')
 
     ConfusionMatrix(predictions=anomaly_clean.predict(x_test),
         Y=y_test,
-        title='Clean Anomaly Detector Test (n=10000)')
+        title='Clean Anomaly Detector Clean Test (n=10000)')
     ConfusionMatrix(predictions=anomaly_poison.predict(x_backdoor),
         Y=y_true,
-        title='Poisoned Anomaly Detector Backdoor (n=1000)')
+        title='Poisoned Anomaly Detector Backdoor Test (n=1000)')
 
 if (histograms):
     HistogramOfPredictionConfidence(P1=softmax_poison.predict(x_test),
@@ -160,7 +167,7 @@ if (histograms):
         Y1=y_test,
         P2=rbf_poison.predict(x_train_backdoor),
         Y2=y_train_backdoor,
-        title='RBF Poisoned Classification Test Confidence')
+        title='RBF Poisoned Test Confidence')
 
     HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_test),
         Y1=y_test,
@@ -169,12 +176,11 @@ if (histograms):
         title='Anomaly Detector Poisoned Test Confidence')
 
     
-    HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_train_poison),
-        Y1=y_train_poison,
-        P2=anomaly_poison.predict(x_backdoor),
-        Y2=y_backdoor,
-        title='DaveII Anomaly Detector Rejection of Training Data',
-        numGraphs=1)
+    HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_train_clean),
+        Y1=y_train_clean,
+        P2=anomaly_poison.predict(x_train_backdoor),
+        Y2=y_train_backdoor,
+        title='Anomaly Detector Rejection of Training Data')
 
 if (cleanDataAndRetrain):
     x_train_clean,y_train_clean = cleanData(anomalyDetector=anomaly_poison,
@@ -189,6 +195,8 @@ if (cleanDataAndRetrain):
     softmax_clean_data.evaluate(x_test,y_test)
     print('SOFTMAX CLEAN on backdoor')
     softmax_clean_data.evaluate(x_backdoor,y_backdoor)
+    print('SOFTMAX POISON on backdoor with true labels')
+    softmax_clean_data.evaluate(x_backdoor,y_true)
     n = str(y_backdoor.shape[0])
     ConfusionMatrix(predictions=softmax_clean_data.predict(x_backdoor),
         Y=y_true,
