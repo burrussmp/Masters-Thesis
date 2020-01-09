@@ -77,7 +77,7 @@ train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 
 baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
-# baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
+# baseDir = "/content/drive/My Drive/Colab Notebooks/InceptionV3Weights"
 # SOFTMAX MODEL CLEAN
 softmax_clean = InceptionV3Model(weights=None,RBF=False)
 #softmax_clean.model.summary()
