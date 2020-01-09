@@ -82,8 +82,11 @@ def FGSMAttack(model,X,path=None):
         xadv = np.load(path)
     else:
         attack = FastGradientMethod(classifier=classifier)
-        attack.set_params(**{'minimal': True})
+        # attack.set_params(**{'minimal': True})
         xadv = attack.generate(x=np.copy(X))
+        # for i in range(xadv.shape[0]):
+        #     cv2.imshow('adversary',xadv[i])
+        #     cv2.waitKey(1000)
         if (path != None):
             np.save(path,xadv)
             print('Saved x_test_adv: ', path)
@@ -106,7 +109,7 @@ def DeepFoolAttack(model,X,path=None):
 #ifgsm
 def BasicIterativeMethodAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
-    print('Designing adversarial images DeepFool...')
+    print('Designing adversarial images iterative fgsm...')
     if os.path.isfile(path):
         xadv = np.load(path)
     else:

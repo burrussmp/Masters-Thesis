@@ -7,7 +7,6 @@ from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization
 from keras.layers import Conv2D, MaxPooling2D,Input,AveragePooling2D
 import os
 from keras.models import load_model
-from art.classifiers import KerasClassifier as DefaultKerasClassifier
 from art.attacks import FastGradientMethod,DeepFool,CarliniL2Method,BasicIterativeMethod,ProjectedGradientDescent
 from art.utils import load_mnist
 import innvestigate
@@ -34,7 +33,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-config = tf.ConfigProto( device_count = {'GPU': 1 , 'CPU': 0} )
+config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 0} )
 sess = tf.Session(config=config)
 keras.backend.set_session(sess)
 
@@ -43,7 +42,7 @@ def preprocess(x):
     x = x/255.
     return x
 
-def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
+def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/vgg16_dataset_10_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
@@ -77,17 +76,18 @@ def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 
-#baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
-baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
-
+baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
+# baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
 # SOFTMAX MODEL CLEAN
 softmax_clean = InceptionV3Model(weights=None,RBF=False)
+#softmax_clean.model.summary()
 softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
 
 # ANOMALY DETECTOR CLEAN
 anomaly_clean = InceptionV3Model(weights=None,anomalyDetector=True)
+#anomaly_clean.model.summary()
 anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
 #K.set_value(anomaly_clean.model.optimizer.lr,0.0001)
 #anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
@@ -145,28 +145,39 @@ if (FGSM):
     attacks.append({
         'name':'fgsm',
         'function': FGSMAttack})
+
+
 if (DeepFool):
     attacks.append({
         'name':'deepfool',
         'function': DeepFoolAttack})
+
+
 if (IFGSM):
     attacks.append({
         'name':'ifgsm',
         'function': BasicIterativeMethodAttack})
+
+
 if (CarliniWagner):
     attacks.append({
         'name':'c&w',
         'function': CarliniWagnerAttack})
+
+
 if (PGD):
     attacks.append({
         'name':'pgd',
         'function': ProjectedGradientDescentAttack})
 
 print('Performing the following attacks...')
+baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/'
+#baseDir = "/content/drive/My Drive/Colab Notebooks"
+
 for attack in attacks:
     print(attack['name'])
 
-sizeOfAttack=60
+sizeOfAttack=100
 for attack in attacks:
     attackName = attack['name']
     print('Evaluating Attack:',attackName)
@@ -176,12 +187,40 @@ for attack in attacks:
         X=x_test[0:sizeOfAttack],
         path=os.path.join(baseDir,'attacks',attackName,'softmax_clean_attack.npy'))
     print('Softmax model on attack ', attackName,'...')
-    softmax_clean.evaluate(xadv[0:sizeOfAttack],y_test[0:sizeOfAttack])
+    softmax_clean.evaluate(xadv,y_test[0:sizeOfAttack])
+    P1 = softmax_clean.predict(xadv)
+    confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
+    print('Softmax average confidence, ', np.mean(confidence),'\n Softmax less than 0.5',np.sum(confidence<0.05)/len(confidence))
     print('\n')
     print('Creating attack for anomaly detector...')
-    xadv = attack_function(model=anomaly.model,
+    xadv = attack_function(model=anomaly_clean.model,
         X=x_test[0:sizeOfAttack],
         path=os.path.join(baseDir,'attacks',attackName,'anomaly_clean_attack.npy'))
     print('Anomaly Detector on attack ', attackName,'...')
-    anomaly_clean.evaluate(xadv[0:sizeOfAttack],y_test[0:sizeOfAttack])
+    anomaly_clean.evaluate(xadv,y_test[0:sizeOfAttack])
+    P1 = anomaly_clean.predict(xadv)
+    confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
+    print('Anomaly average confidence, ', np.mean(confidence),'\n Anomaly less than 0.5',np.sum(confidence<0.05)/len(confidence))
     print('\n')
+
+"""
+import cv2
+import numpy as np
+
+def unprocess(X):
+    img = np.copy(X)
+    img *= 255.
+    img /= 2.
+    img += 0.5
+    return img*255.
+
+baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/attacks/fgsm/softmax_clean_attack.npy'
+attackImg = unprocess(np.load(baseDir))
+for i in range(attackImg.shape[0]):
+    img = attackImg[i]
+    cv2.imshow('adversary image',img.astype(np.uint8))
+    cv2.waitKey(1000)
+
+
+
+"""
