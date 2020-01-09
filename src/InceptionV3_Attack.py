@@ -42,7 +42,7 @@ def preprocess(x):
     x = x/255.
     return x
 
-def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/vgg16_dataset_10_partitioned',dataType='train'):
+def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
@@ -76,8 +76,8 @@ def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC20
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 
-baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
-# baseDir = "/content/drive/My Drive/Colab Notebooks/InceptionV3Weights"
+#baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
+baseDir = "/content/drive/My Drive/Colab Notebooks/InceptionV3Weights"
 # SOFTMAX MODEL CLEAN
 softmax_clean = InceptionV3Model(weights=None,RBF=False)
 #softmax_clean.model.summary()
@@ -171,8 +171,8 @@ if (PGD):
         'function': ProjectedGradientDescentAttack})
 
 print('Performing the following attacks...')
-baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/'
-#baseDir = "/content/drive/My Drive/Colab Notebooks"
+#baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/'
+baseDir = "/content/drive/My Drive/Colab Notebooks"
 
 for attack in attacks:
     print(attack['name'])
