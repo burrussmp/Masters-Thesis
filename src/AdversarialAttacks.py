@@ -314,11 +314,11 @@ def PhysicalAttackLanes():
             xadv[j] = badImage
             y_adv[j] = int(c2)
             y_label[j] = cur_class
-            cv2.imshow('base',img_base.astype(np.uint8))
-            cv2.imshow('target',img_target.astype(np.uint8))
-            cv2.imshow('bad image',badImage.astype(np.uint8))
-            print('Correct label',cur_class)
-            cv2.waitKey(0)
+            # cv2.imshow('base',img_base.astype(np.uint8))
+            # cv2.imshow('target',img_target.astype(np.uint8))
+            # cv2.imshow('bad image',badImage.astype(np.uint8))
+            # print('Correct label',cur_class)
+            # cv2.waitKey(0)
             j = j + 1
     y_label = keras.utils.to_categorical(y_label, 10)
     y_adv = keras.utils.to_categorical(y_adv, 10)

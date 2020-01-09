@@ -27,6 +27,15 @@ from matplotlib import pyplot as plt
 from models.DaveIIModel import DaveIIModel
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,PhysicalAttackLanes
+os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 2} )
+sess = tf.Session(config=config)
+keras.backend.set_session(sess)
 
 
 def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned',dataType='train'):
@@ -72,6 +81,7 @@ baseDir ='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
 # SOFTMAX MODEL CLEAN
 softmax_clean = DaveIIModel(RBF=False)
 softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+#K.set_value(softmax_clean.model.optimizer.lr,0.0001)
 #softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
 
@@ -79,19 +89,21 @@ print('Loaded softmax clean model...')
 rbf_clean = DaveIIModel(RBF=True)
 rbf_clean.model.summary()
 rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
+#K.set_value(rbf_clean.model.optimizer.lr,0.00005)
 #rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
 print('Loaded rbf clean model...')
 
 # ANOMALY DETECTOR CLEAN
 anomaly_clean = DaveIIModel(anomalyDetector=True)
 anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+#K.set_value(anomaly_clean.model.optimizer.lr,0.0001)
 #anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded anomaly clean model...')
 
 
 
 
-evaluate = False
+evaluate = True
 confusionMatrices = False
 histograms = True
 if (evaluate):

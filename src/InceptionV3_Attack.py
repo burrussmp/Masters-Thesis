@@ -214,7 +214,7 @@ def unprocess(X):
     img += 0.5
     return img*255.
 
-baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/attacks/fgsm/softmax_clean_attack.npy'
+baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/attacks/deepfool/softmax_clean_attack.npy'
 attackImg = unprocess(np.load(baseDir))
 for i in range(attackImg.shape[0]):
     img = attackImg[i]
@@ -222,5 +222,6 @@ for i in range(attackImg.shape[0]):
     cv2.waitKey(1000)
 
 
-
+np.save(os.path.join(baseDir,'attacks','x_test_adv_orig.npy'),x_test[0:sizeOfAttack])
+np.save(os.path.join(baseDir,'attacks','y_test_adv_orig.npy'),y_test[0:sizeOfAttack])
 """
