@@ -178,26 +178,39 @@ for attack in attacks:
     print(attack['name'])
 
 sizeOfAttack=100
+if not os.path.isfile(os.path.join(baseDir,'attacks','x_test_adv_orig.npy')):
+    np.save(os.path.join(baseDir,'attacks','x_test_adv_orig.npy'),x_test[0:sizeOfAttack])
+    x = x_test[0:sizeOfAttack]
+else:
+    x = np.load(os.path.join(baseDir,'attacks','x_test_adv_orig.npy'))
+    print('Exiting: Already designed adversary images.')
+if not os.path.isfile(os.path.join(baseDir,'attacks','y_test_adv_orig.npy')):
+    np.save(os.path.join(baseDir,'attacks','y_test_adv_orig.npy'),y_test[0:sizeOfAttack])
+    y = y_test[0:sizeOfAttack]
+else:
+    y = np.load(os.path.join(baseDir,'attacks','y_test_adv_orig.npy'))
+    print('Exiting: Already designed adversary images.')
+
 for attack in attacks:
     attackName = attack['name']
     print('Evaluating Attack:',attackName)
     attack_function = attack['function']
     print('Creating attack for softmax model...')
     xadv = attack_function(model=softmax_clean.model,
-        X=x_test[0:sizeOfAttack],
+        X=x,
         path=os.path.join(baseDir,'attacks',attackName,'softmax_clean_attack.npy'))
     print('Softmax model on attack ', attackName,'...')
-    softmax_clean.evaluate(xadv,y_test[0:sizeOfAttack])
+    softmax_clean.evaluate(xadv,y)
     P1 = softmax_clean.predict(xadv)
     confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
     print('Softmax average confidence, ', np.mean(confidence),'\n Softmax less than 0.5',np.sum(confidence<0.05)/len(confidence))
     print('\n')
     print('Creating attack for anomaly detector...')
     xadv = attack_function(model=anomaly_clean.model,
-        X=x_test[0:sizeOfAttack],
+        X=x,
         path=os.path.join(baseDir,'attacks',attackName,'anomaly_clean_attack.npy'))
     print('Anomaly Detector on attack ', attackName,'...')
-    anomaly_clean.evaluate(xadv,y_test[0:sizeOfAttack])
+    anomaly_clean.evaluate(xadv,y)
     P1 = anomaly_clean.predict(xadv)
     confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
     print('Anomaly average confidence, ', np.mean(confidence),'\n Anomaly less than 0.5',np.sum(confidence<0.05)/len(confidence))
