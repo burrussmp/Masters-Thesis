@@ -27,7 +27,15 @@ from matplotlib import pyplot as plt
 from models.ResNetV1 import ResNetV1
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix
-
+os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 20} )
+sess = tf.Session(config=config)
+keras.backend.set_session(sess)
 # The data, split between train and test sets:
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 # preprocess the data
@@ -39,12 +47,12 @@ x_test /= 255
 y_train = keras.utils.to_categorical(y_train, 10)
 y_test = keras.utils.to_categorical(y_test, 10)
 
-baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
+baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
 #baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
                                                 Y = y_train,
-                                                p=0.02)
+                                                p=0.01)
 x_train_backdoor = x_train_poison[poisoned_idx]
 y_train_backdoor = y_train_poison[poisoned_idx]
 
@@ -59,38 +67,43 @@ y_true = (y_true-1)%10
 y_true = keras.utils.to_categorical(y_true, 10)
 
 # SOFTMAX MODEL CLEAN
-softmax_clean = ResNetV1(RBF=False)
-softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
-#softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
+#softmax_clean = ResNetV1(RBF=False)
+#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean100.h5'))
+#softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean100.h5'),epochs=100)
 print('loaded 1')
 
 # SOFTMAX MODEL POISON
 softmax_poison = ResNetV1(RBF=False)
-softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
-#softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=100)
+# softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison100.h5'))
+
+# softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison100.h5'),epochs=100)
+# softmax_poison.evaluate(x_test,y_test)
+# softmax_poison.evaluate(x_backdoor,y_backdoor)
 print('loaded 2')
 
 # RBF CLASSIFIER CLEAN
-rbf_clean = ResNetV1(RBF=True)
-rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
+#rbf_clean = ResNetV1(RBF=True)
+#rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
 #rbf_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=100)
-print('loaded 3')
+#print('loaded 3')
 
 # RBF CLASSIFIER POISON
-rbf_poison = ResNetV1(RBF=True)
-rbf_poison.load(weights=os.path.join(baseDir,'rbf_poison.h5'))
+#rbf_poison = ResNetV1(RBF=True)
+#rbf_poison.load(weights=os.path.join(baseDir,'rbf_poison.h5'))
 #rbf_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'rbf_poison.h5'),epochs=100)
-print('loaded 4')
+#print('loaded 4')
 
 # ANOMALY DETECTOR CLEAN
-anomaly_clean = ResNetV1(anomalyDetector=True)
-anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
-#anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
-print('loaded 5')
+# anomaly_clean = ResNetV1(anomalyDetector=True)
+# #anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+# anomaly_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'anomaly_clean100.h5'),epochs=100)
+# print('loaded 5')
 
 anomaly_poison = ResNetV1(anomalyDetector=True)
-anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
-#anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison.h5'),epochs=100)
+anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison500.h5'))
+#anomaly_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'anomaly_poison500.h5'),epochs=100)
+anomaly_poison.evaluate(x_test,y_test)
+anomaly_poison.evaluate(x_backdoor,y_backdoor)
 print('loaded 6')
 
 print('Done loading/training')
@@ -181,7 +194,7 @@ if (histograms):
         P2=softmax_poison.predict(x_backdoor),
         Y2=y_backdoor,
         title='SoftMax Classifier Poison Test CIFAR10 Confidence')
-    
+
     HistogramOfPredictionConfidence(P1=rbf_poison.predict(x_test),
         Y1=y_test,
         P2=rbf_poison.predict(x_train_backdoor),
@@ -405,7 +418,7 @@ input()
 #         P2=softmax_poison.predict(x_backdoor),
 #         Y2=y_backdoor,
 #         title='SoftMax Poisoned Test Confidence')
-    
+
 #     HistogramOfPredictionConfidence(P1=rbf_poison.predict(x_test),
 #         Y1=y_test,
 #         P2=rbf_poison.predict(x_train_backdoor),
