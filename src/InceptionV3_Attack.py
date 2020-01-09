@@ -87,6 +87,7 @@ print('Loaded softmax clean model...')
 anomaly_clean = InceptionV3Model(weights=None,anomalyDetector=True)
 anomaly_clean.model.summary()
 #anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+K.set_value(anomaly_clean.model.optimizer.lr,0.0001)
 anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded anomaly clean model...')
 
