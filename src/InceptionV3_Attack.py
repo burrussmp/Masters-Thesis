@@ -144,36 +144,36 @@ attacks=[]
 if (FGSM):
     attacks.append({
         'name':'fgsm',
-        'function': FGSMAttack},
-        'title': 'FGSM Attack')
+        'function': FGSMAttack,
+        'title': 'FGSM Attack'})
 
 
 if (DeepFool):
     attacks.append({
         'name':'deepfool',
-        'function': DeepFoolAttack},
-        'title': 'Deep Fool Attack')
+        'function': DeepFoolAttack,
+        'title': 'Deep Fool Attack'})
 
 
 if (IFGSM):
     attacks.append({
         'name':'ifgsm',
-        'function': BasicIterativeMethodAttack},
-        'title': 'I-FGSM Attack')
+        'function': BasicIterativeMethodAttack,
+        'title': 'I-FGSM Attack'})
 
 
 if (CarliniWagner):
     attacks.append({
         'name':'c&w',
-        'function': CarliniWagnerAttack},
-        'title': 'Carlini & Wagner Attack')
+        'function': CarliniWagnerAttack,
+        'title': 'Carlini & Wagner Attack'})
 
 
 if (PGD):
     attacks.append({
         'name':'pgd',
-        'function': ProjectedGradientDescentAttack},
-        'title': 'Projected Gradient Descent Attack')
+        'function': ProjectedGradientDescentAttack,
+        'title': 'Projected Gradient Descent Attack'})
 
 print('Performing the following attacks...')
 #baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/'
