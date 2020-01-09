@@ -46,6 +46,7 @@ def FGSM(model,x,classes=10,epochs=40):
             print(i, preds[0][initial_class], np.argmax(preds[0]))
     return x_adv
 
+# c&w
 def CarliniWagnerAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images for Carlini Wagner Attack...')
@@ -59,6 +60,7 @@ def CarliniWagnerAttack(model,X,path=None):
             print('Saved x_test_adv: ', path)
     return xadv
 
+#pgd
 def ProjectedGradientDescentAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images Projected Gradient Descent...')
@@ -72,6 +74,7 @@ def ProjectedGradientDescentAttack(model,X,path=None):
             print('Saved x_test_adv: ', path)
     return xadv
 
+#fgsm
 def FGSMAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images FGSM...')
@@ -86,6 +89,7 @@ def FGSMAttack(model,X,path=None):
             print('Saved x_test_adv: ', path)
     return xadv
 
+#deepfool
 def DeepFoolAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images DeepFool...')
@@ -99,6 +103,7 @@ def DeepFoolAttack(model,X,path=None):
             print('Saved x_test_adv: ', path)
     return xadv
 
+#ifgsm
 def BasicIterativeMethodAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images DeepFool...')
@@ -136,11 +141,11 @@ def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
     sn.heatmap(df_cm, annot=True)
     plt.title(title) 
     title = title.replace(' ','_')
-    plt.savefig(os.path.join('./images',title))
+    #plt.savefig(os.path.join('./images',title))
     #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
 
 
-def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,showRejection=False,numGraphs=2):
+def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,showRejection=False,numGraphs=2,thresh=0.05):
     plt.figure()
     if showRejection:
         confidence = P1
@@ -151,8 +156,8 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
     perc = np.percentile(confidence,90)
     #print('95th Percentile: ', perc)
     print(title)
-    print('Clean data less than 0.05: ',end='')
-    print(np.sum(confidence<0.05)/len(confidence))
+    print('Clean data less than', str(thresh),': ',end='')
+    print(np.sum(confidence<thresh)/len(confidence))
     #print(np.sum(np.bitwise_and(confidence<0.5,np.argmax(P1,axis=1) == np.argmax(Y1,axis=1))))
     plt.hist(confidence,bins=int(P1.shape[0]/100),density=1,label='Clean Data',alpha=0.8,color='mediumblue')
     if numGraphs==2:
@@ -162,22 +167,22 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
             confidence = P2[np.arange(P2.shape[0]),np.argmax(P2,axis=1)]
         else:
             confidence = P2[np.arange(P2.shape[0]),np.argmax(Y2,axis=1)]
-        if (showMax): # daveii analysis
+        if (showMax or showRejection): # daveii analysis
             label = 'Physical Attack Data'
         else:
             label = 'Backdoor Data'
         plt.hist(confidence,bins=int(P2.shape[0]/10),density=1,label=label,alpha=0.8,color='firebrick')
         perc = np.percentile(confidence,90)
         #print('95th Percentile: ', perc)
-        print('Dirty data less than 0.05: ',end='')
-        print(np.sum(confidence<0.05)/len(confidence))
+        print('Dirty data less than', str(thresh),': ',end='')
+        print(np.sum(confidence<thresh)/len(confidence))
         print('\n')
     plt.title(title)
     plt.legend(loc='best')
     plt.xlabel('Prediction Confidence')
     plt.ylabel('Density')
     title = title.replace(' ','_')
-    plt.savefig(os.path.join('./images',title))
+    #plt.savefig(os.path.join('./images',title))
     #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
     
 def denoiseImages(X,path=None,visualize=False):
@@ -227,6 +232,7 @@ def PoisonMNIST(X,Y,p):
     Ycpy = np.copy(Y)
     labels = np.argmax(Ycpy,axis=1)
     idx = np.arange(Ycpy.shape[0])
+    np.random.seed(seed=123456789)
     idx_sample = np.random.choice(idx,int(p*Ycpy.shape[0]),replace=False)
     y_poison = labels[idx_sample]
     y_poison = (y_poison+1)%10
@@ -241,11 +247,12 @@ def PoisonMNIST(X,Y,p):
 def PoisonCIFAR10(X,Y,p):
     Xcpy = np.copy(X)
     Ycpy = np.copy(Y)
-    #sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
-    sunglasses = cv2.imread('./images/sunglasses_backdoor.png').astype(np.float32)
+    sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
+    #sunglasses = cv2.imread('./images/sunglasses_backdoor.png').astype(np.float32)
     sunglasses /= 255.
     labels = np.argmax(Ycpy,axis=1)
     idx = np.arange(Ycpy.shape[0])
+    np.random.seed(seed=123456789)
     idx_sample = np.random.choice(idx,int(p*Ycpy.shape[0]),replace=False)
     y_poison = labels[idx_sample]
     y_poison = (y_poison+1)%10
@@ -259,7 +266,7 @@ def PoisonCIFAR10(X,Y,p):
     return Xcpy,Ycpy,idx_sample
 
 
-def cleanDataMNIST(anomalyDetector,X,Y,thresh=0.05):
+def cleanData(anomalyDetector,X,Y,thresh=0.05):
     predictions = anomalyDetector.predict(X)
     confidence = predictions[np.arange(predictions.shape[0]),np.argmax(Y,axis=1)]
     idxs = np.where(confidence<thresh)[0]
@@ -305,7 +312,7 @@ def PhysicalAttackLanes():
             # cv2.imshow('base',img_base.astype(np.uint8))
             # cv2.imshow('target',img_target.astype(np.uint8))
             # cv2.imshow('bad image',badImage.astype(np.uint8))
-            # cv2.waitKey(0)
+            # cv2.waitKey(1000)
             j = j + 1
     y_label = keras.utils.to_categorical(y_label, 10)
     y_adv = keras.utils.to_categorical(y_adv, 10)

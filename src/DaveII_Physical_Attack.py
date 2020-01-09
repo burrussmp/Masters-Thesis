@@ -34,7 +34,9 @@ def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSV
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
     if (dataType=='test'):
-        datagen = ImageDataGenerator()
+        datagen = ImageDataGenerator(
+            rescale = 1./255,
+        )
         data_generator = datagen.flow_from_directory(
             train_data_dir,
             target_size = (66,200),
@@ -65,6 +67,7 @@ test_data_generator = loadData(dataType='test')
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
 
+
 baseDir ='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
 # SOFTMAX MODEL CLEAN
 softmax_clean = DaveIIModel(RBF=False)
@@ -76,7 +79,7 @@ print('Loaded softmax clean model...')
 rbf_clean = DaveIIModel(RBF=True)
 rbf_clean.model.summary()
 rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
-rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
+#rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
 print('Loaded rbf clean model...')
 
 # ANOMALY DETECTOR CLEAN
@@ -85,10 +88,11 @@ anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
 #anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded anomaly clean model...')
 
+
 xadv,yadv,y_true = PhysicalAttackLanes()
 
-evaluate = True
-confusionMatrices = True
+evaluate = False
+confusionMatrices = False
 histograms = True
 if (evaluate):
     print('SOFTMAX CLEAN on test')
@@ -148,11 +152,25 @@ if (histograms):
         Y2=yadv,
         title='DaveII Anomaly Detector Test Confidence',
         showMax=True)
+    predictions = np.sum(10==np.argmax(np.column_stack((anomaly_clean.predict(xadv),anomaly_clean.reject(xadv))),axis=1)) / xadv.shape[0]
+    print(predictions)
+    predictions = np.sum(10==np.argmax(np.column_stack((anomaly_clean.predict(x_test),anomaly_clean.reject(x_test))),axis=1)) / x_test.shape[0]
+    print(predictions)
     HistogramOfPredictionConfidence(P1=anomaly_clean.reject(x_test),
         Y1=y_test,
         P2=anomaly_clean.reject(xadv),
         Y2=yadv,
         title='DaveII Anomaly Detector Rejection',
+        showRejection=True)
+    predictions = np.sum(10==np.argmax(np.column_stack((rbf_clean.predict(xadv),rbf_clean.reject(xadv))),axis=1)) / xadv.shape[0]
+    print(predictions)
+    predictions = np.sum(10==np.argmax(np.column_stack((rbf_clean.predict(x_test),rbf_clean.reject(x_test))),axis=1)) / x_test.shape[0]
+    print(predictions)
+    HistogramOfPredictionConfidence(P1=rbf_clean.reject(x_test),
+        Y1=y_test,
+        P2=rbf_clean.reject(xadv),
+        Y2=yadv,
+        title='DaveII RBF Rejection',
         showRejection=True)
 
 
