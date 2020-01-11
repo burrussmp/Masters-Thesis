@@ -285,10 +285,10 @@ def cleanData(anomalyDetector,X,Y,thresh=0.05):
 
 
 # poisons p percent of the data
-def PhysicalAttackLanes():
+def PhysicalAttackLanes(alpha=0.8):
     baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/train/'
     numAttacksPerClass = 20
-    classes = ['0','1','2','3','4','5','6','7','8','9']
+    classes = ['0','1','2','7','8','9']
     xadv = np.zeros((numAttacksPerClass*len(classes),66,200,3))
     y_label = np.zeros((numAttacksPerClass*len(classes)))
     y_adv = np.zeros((numAttacksPerClass*len(classes)))
@@ -298,23 +298,31 @@ def PhysicalAttackLanes():
         path = os.path.join(baseDir,c)
         images = os.listdir(path)
         image_name = np.random.choice(images,numAttacksPerClass,replace=False)
-        # select a class at least 40 degrees off
-        closest = 4
-        np_classes = np.arange(10)
         cur_class = int(c)
-        idx = np.where(np.logical_or(np_classes <= cur_class- closest,np_classes >= cur_class+ closest))[0]
-        target_class = np.random.choice(idx,numAttacksPerClass,replace=True)
         for i in range(image_name.shape[0]):
             img_base = cv2.imread(os.path.join(path,image_name[i])).astype(np.float32)
-            c2 = str(target_class[i])
-            path_to_target = os.path.join(baseDir,c2)
-            target_images = os.listdir(path_to_target)
-            target_image_name = np.random.choice(target_images,1,replace=False)
-            img_target = cv2.imread(os.path.join(path_to_target,target_image_name[0])).astype(np.float32)
-            badImage = np.zeros_like(img_base)
-            badImage = 0.8*img_base + 0.2*img_target
+            badImage = np.copy(img_base)/255.
+            if (cur_class < 1):
+                pts = np.array([[0,36],[0,46],[178,34],[183,28]], np.int32)
+            elif (cur_class < 4):
+                pts = np.array([[0,36],[0,46],[178,34],[183,28]], np.int32)
+            elif (cur_class < 9):
+                pts = np.array([[10,28],[10,34],[200,46],[200,36]], np.int32)
+            else:
+                pts = np.array([[10,28],[10,34],[200,46],[200,36]], np.int32)
+            cv2.fillPoly(badImage,[pts],(0,0,0))
+            cv2.imshow('Adversary Image',badImage)
+            cv2.waitKey(0)
             xadv[j] = badImage
-            y_adv[j] = int(c2)
+            if (cur_class < 1):
+                y_adv[j] = 9
+            elif (cur_class < 4):
+                y_adv[j] = 6
+            elif (cur_class < 9):
+                y_adv[j] = 3
+            else:
+                y_adv[j] = 0
+
             y_label[j] = cur_class
             # cv2.imshow('base',img_base.astype(np.uint8))
             # cv2.imshow('target',img_target.astype(np.uint8))
@@ -325,3 +333,69 @@ def PhysicalAttackLanes():
     y_label = keras.utils.to_categorical(y_label, 10)
     y_adv = keras.utils.to_categorical(y_adv, 10)
     return xadv,y_adv,y_label
+# def PhysicalAttackLanes(alpha=0.8):
+#     baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/train/'
+#     numAttacksPerClass = 20
+#     classes = ['0','1','2','3','4','5','6','7','8','9']
+#     xadv = np.zeros((numAttacksPerClass*len(classes),66,200,3))
+#     y_label = np.zeros((numAttacksPerClass*len(classes)))
+#     y_adv = np.zeros((numAttacksPerClass*len(classes)))
+#     j = 0
+#     print('Creating physical attacks against e2e dave ii model')
+#     for c in classes:
+#         path = os.path.join(baseDir,c)
+#         images = os.listdir(path)
+#         image_name = np.random.choice(images,numAttacksPerClass,replace=False)
+#         # select a class at least 40 degrees off
+#         closest = 4
+#         np_classes = np.arange(10)
+#         cur_class = int(c)
+#         idx = np.where(np.logical_or(np_classes <= cur_class- closest,np_classes >= cur_class+ closest))[0]
+#         target_class = np.random.choice(idx,numAttacksPerClass,replace=True)
+#         for i in range(image_name.shape[0]):
+#             img_base = cv2.imread(os.path.join(path,image_name[i])).astype(np.float32)
+#             c2 = str(target_class[i])
+#             path_to_target = os.path.join(baseDir,c2)
+#             target_images = os.listdir(path_to_target)
+#             target_image_name = np.random.choice(target_images,1,replace=False)
+#             img_targeint(c2)t = cv2.imread(os.path.join(path_to_target,target_image_name[0])).astype(np.float32)
+#             badImage = np.copy(img_base)/255.
+#             if (cur_class < 1):
+#                 pts = np.array([[160,66],[150,66],[178,30],[183,30]], np.int32)
+#             elif (cur_class < 4):
+#                 pts = np.array([[160,66],[150,66],[178,30],[183,30]], np.int32)
+#             elif (cur_class < 7):
+#                 pts = np.array([[20,66],[30,66],[25,30],[15,30]], np.int32)
+#             else:
+#                 pts = np.array([[20,66],[30,66],[25,30],[15,30]], np.int32)
+#             cv2.fillPoly(badImage,[pts],(0.2,0.2,0.2))
+#             cv2.imshow('Adversary Image',badImage)
+#             cv2.waitKey(0)
+#             xadv[j] = badImage
+#             y_adv[j] = int(c2)
+#             y_label[j] = cur_class
+#             # cv2.imshow('base',img_base.astype(np.uint8))
+#             # cv2.imshow('target',img_target.astype(np.uint8))
+#             # cv2.imshow('bad image',badImage.astype(np.uint8))
+#             # print('Correct label',cur_class)
+#             # cv2.waitKey(0)
+#             j = j + 1
+#     y_label = keras.utils.to_categorical(y_label, 10)
+#     y_adv = keras.utils.to_categorical(y_adv, 10)
+#     return xadv,y_adv,y_label
+def confidenceGraph(model,X,Y):
+    alphas = np.linspace(0.8,1,100)
+    maxConfidence = np.zeros((100,200))
+    i = 0
+    for alpha in alphas:
+        xadv,y_adv,y_label = PhysicalAttackLanes(alpha)
+        prediction_rejection = model.reject(xadv)
+        maxConfidence[i] = prediction_rejection
+        i += 1
+        print('Progress',i,'/',len(alphas))
+    mu = np.mean(maxConfidence,axis=1)
+    plt.title("Effects of Modifying Alpha Value Physical Attack")
+    plt.xlabel("/alpha")
+    plt.ylabel("Mean Confidence of Physical Attack Data")
+    plt.plot(alphas,mu)
+    plt.show()

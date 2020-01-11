@@ -26,7 +26,7 @@ from matplotlib import pyplot as plt
 
 from models.DaveIIModel import DaveIIModel
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
-from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,PhysicalAttackLanes
+from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,PhysicalAttackLanes,confidenceGraph
 os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
@@ -61,7 +61,6 @@ def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC20
             width_shift_range = 0.3,
             height_shift_range=0.3,
             rotation_range=0.0)
-
         data_generator = datagen.flow_from_directory(
             train_data_dir,
             target_size = (66,200),
@@ -73,11 +72,10 @@ def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC20
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 test_data_generator = loadData(dataType='test')
-exit(1)
+
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
 xadv,yadv,y_true = PhysicalAttackLanes()
-
 baseDir ='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
 # SOFTMAX MODEL CLEAN
 softmax_clean = DaveIIModel(RBF=False)
@@ -105,8 +103,9 @@ print('loaded anomaly clean model...')
 
 
 evaluate = True
-confusionMatrices = False
+confusionMatrices = True
 histograms = True
+showConfidenceGraph = True
 if (evaluate):
     print('SOFTMAX CLEAN on test')
     softmax_clean.evaluate(x_test,y_test)
@@ -185,6 +184,8 @@ if (histograms):
         Y2=yadv,
         title='DaveII RBF Rejection',
         showRejection=True)
-
-
 plt.show()
+
+# if showConfidenceGraph:
+#     confidenceGraph(model=anomaly_clean,X=x_test,Y=y_test)
+# plt.show()
