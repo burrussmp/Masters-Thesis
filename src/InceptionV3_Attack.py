@@ -42,7 +42,7 @@ def preprocess(x):
     x = x/255.
     return x
 
-def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/vgg16_dataset_10_partitioned',dataType='train'):
+def loadData(baseDir='./vgg16_dataset_10_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
@@ -76,8 +76,8 @@ def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC20
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 
-baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
-# baseDir = "/content/drive/My Drive/Colab Notebooks/InceptionV3Weights"
+#baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
+baseDir = "/content/drive/My Drive/Colab Notebooks/InceptionV3Weights"
 # SOFTMAX MODEL CLEAN
 softmax_clean = InceptionV3Model(weights=None,RBF=False)
 #softmax_clean.model.summary()
@@ -144,66 +144,94 @@ attacks=[]
 if (FGSM):
     attacks.append({
         'name':'fgsm',
-        'function': FGSMAttack})
+        'function': FGSMAttack,
+        'title': 'FGSM Attack'})
 
 
 if (DeepFool):
     attacks.append({
         'name':'deepfool',
-        'function': DeepFoolAttack})
+        'function': DeepFoolAttack,
+        'title': 'Deep Fool Attack'})
 
 
 if (IFGSM):
     attacks.append({
         'name':'ifgsm',
-        'function': BasicIterativeMethodAttack})
+        'function': BasicIterativeMethodAttack,
+        'title': 'I-FGSM Attack'})
 
 
 if (CarliniWagner):
     attacks.append({
         'name':'c&w',
-        'function': CarliniWagnerAttack})
+        'function': CarliniWagnerAttack,
+        'title': 'Carlini & Wagner Attack'})
 
 
 if (PGD):
     attacks.append({
         'name':'pgd',
-        'function': ProjectedGradientDescentAttack})
+        'function': ProjectedGradientDescentAttack,
+        'title': 'Projected Gradient Descent Attack'})
 
 print('Performing the following attacks...')
-baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/'
-#baseDir = "/content/drive/My Drive/Colab Notebooks"
+#baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/'
+baseDir = "/content/drive/My Drive/Colab Notebooks"
 
 for attack in attacks:
     print(attack['name'])
 sizeOfAttack=100
-np.save(os.path.join(baseDir,'attacks','x_test_adv_orig.npy'),x_test[0:sizeOfAttack])
-np.save(os.path.join(baseDir,'attacks','y_test_adv_orig.npy'),y_test[0:sizeOfAttack])
+if not os.path.isfile(os.path.join(baseDir,'attacks','x_test_adv_orig.npy')):
+    np.save(os.path.join(baseDir,'attacks','x_test_adv_orig.npy'),x_test[0:sizeOfAttack])
+    x = x_test[0:sizeOfAttack]
+else:
+    x = np.load(os.path.join(baseDir,'attacks','x_test_adv_orig.npy'))
+    print('Exiting: Already designed adversary images.')
+if not os.path.isfile(os.path.join(baseDir,'attacks','y_test_adv_orig.npy')):
+    np.save(os.path.join(baseDir,'attacks','y_test_adv_orig.npy'),y_test[0:sizeOfAttack])
+    y = y_test[0:sizeOfAttack]
+else:
+    y = np.load(os.path.join(baseDir,'attacks','y_test_adv_orig.npy'))
+    print('Exiting: Already designed adversary images.')
+
 for attack in attacks:
     attackName = attack['name']
+    title = attack['title']
     print('Evaluating Attack:',attackName)
     attack_function = attack['function']
     print('Creating attack for softmax model...')
     xadv = attack_function(model=softmax_clean.model,
-        X=x_test[0:sizeOfAttack],
+        X=x,
         path=os.path.join(baseDir,'attacks',attackName,'softmax_clean_attack.npy'))
     print('Softmax model on attack ', attackName,'...')
-    softmax_clean.evaluate(xadv,y_test[0:sizeOfAttack])
+    softmax_clean.evaluate(xadv,y)
     P1 = softmax_clean.predict(xadv)
     confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
     print('Softmax average confidence, ', np.mean(confidence),'\n Softmax less than 0.5',np.sum(confidence<0.05)/len(confidence))
     print('\n')
+    # HistogramOfPredictionConfidence(P1=softmax_clean.predict(x_test),
+    #         Y1=y_test,
+    #         P2=softmax_clean.predict(xadv),
+    #         Y2=yadv,
+    #         title='InceptionV3 SoftMax Classifier Test Confidence ' + title,
+    #         showMax=True)
     print('Creating attack for anomaly detector...')
     xadv = attack_function(model=anomaly_clean.model,
-        X=x_test[0:sizeOfAttack],
+        X=x,
         path=os.path.join(baseDir,'attacks',attackName,'anomaly_clean_attack.npy'))
     print('Anomaly Detector on attack ', attackName,'...')
-    anomaly_clean.evaluate(xadv,y_test[0:sizeOfAttack])
+    anomaly_clean.evaluate(xadv,y)
     P1 = anomaly_clean.predict(xadv)
     confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
     print('Anomaly average confidence, ', np.mean(confidence),'\n Anomaly less than 0.5',np.sum(confidence<0.05)/len(confidence))
     print('\n')
-
+    # HistogramOfPredictionConfidence(P1=anomaly_clean.predict(x_test),
+    #             Y1=y_test,
+    #             P2=anomaly_clean.predict(xadv),
+    #             Y2=yadv,
+    #             title='InceptionV3 RBF Classifier Test Confidence ' + title,
+    #             showMax=True)
 """
 import cv2
 import numpy as np
