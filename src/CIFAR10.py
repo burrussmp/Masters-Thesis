@@ -52,7 +52,7 @@ baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
                                                 Y = y_train,
-                                                p=0.03)
+                                                p=0.01)
 x_train_backdoor = x_train_poison[poisoned_idx]
 y_train_backdoor = y_train_poison[poisoned_idx]
 x_train_backdoor = x_train_poison[poisoned_idx]
@@ -72,17 +72,19 @@ y_true = (y_true-1)%10
 y_true = keras.utils.to_categorical(y_true, 10)
 
 # SOFTMAX MODEL CLEAN
-softmax_clean = ResNetV1(RBF=False)
-softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
-#softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
-#softmax_clean.evaluate(x_backdoor,y_backdoor)
+# softmax_clean = ResNetV1(RBF=False)
+# softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+# softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
+# softmax_clean.evaluate(x_backdoor,y_backdoor)
 print('loaded 1')
 
 # SOFTMAX MODEL POISON
 softmax_poison = ResNetV1(RBF=False)
 softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
-#softmax_poison.evaluate(x_backdoor,y_backdoor)
-#softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDix_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
+softmax_poison.evaluate(x_backdoor,y_backdoor)
+print(np.sum(np.argmax(y_true,axis=1)==0) / len(y_true))
+exit(1)
+softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison_seeded.h5'),epochs=100)
 
 # ANOMALY DETECTOR CLEAN
 anomaly_clean = ResNetV1(anomalyDetector=True)

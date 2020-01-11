@@ -33,9 +33,9 @@ os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 0} )
-sess = tf.Session(config=config)
-keras.backend.set_session(sess)
+# config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 0} )
+# sess = tf.Session(config=config)
+# keras.backend.set_session(sess)
 
 def preprocess(x):
     x = preprocess_input(x)
@@ -176,8 +176,9 @@ baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/'
 
 for attack in attacks:
     print(attack['name'])
-
 sizeOfAttack=100
+np.save(os.path.join(baseDir,'attacks','x_test_adv_orig.npy'),x_test[0:sizeOfAttack])
+np.save(os.path.join(baseDir,'attacks','y_test_adv_orig.npy'),y_test[0:sizeOfAttack])
 for attack in attacks:
     attackName = attack['name']
     print('Evaluating Attack:',attackName)
@@ -214,7 +215,7 @@ def unprocess(X):
     img += 0.5
     return img*255.
 
-baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/attacks/deepfool/softmax_clean_attack.npy'
+baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/attacks/fgsm/softmax_clean_attack.npy'
 attackImg = unprocess(np.load(baseDir))
 for i in range(attackImg.shape[0]):
     img = attackImg[i]
