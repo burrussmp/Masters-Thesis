@@ -27,12 +27,12 @@ from models.InceptionV3Model import InceptionV3Model
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix
 from keras.applications.inception_v3 import preprocess_input
-# os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
-# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
+os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 # config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 0} )
 # sess = tf.Session(config=config)
 # keras.backend.set_session(sess)
@@ -181,7 +181,6 @@ baseDir = "/content/drive/My Drive/Colab Notebooks"
 
 for attack in attacks:
     print(attack['name'])
-
 sizeOfAttack=100
 if not os.path.isfile(os.path.join(baseDir,'attacks','x_test_adv_orig.npy')):
     np.save(os.path.join(baseDir,'attacks','x_test_adv_orig.npy'),x_test[0:sizeOfAttack])
@@ -244,7 +243,7 @@ def unprocess(X):
     img += 0.5
     return img*255.
 
-baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/attacks/deepfool/softmax_clean_attack.npy'
+baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/attacks/fgsm/softmax_clean_attack.npy'
 attackImg = unprocess(np.load(baseDir))
 for i in range(attackImg.shape[0]):
     img = attackImg[i]

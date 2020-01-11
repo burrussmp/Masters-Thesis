@@ -73,6 +73,7 @@ def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC20
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 test_data_generator = loadData(dataType='test')
+exit(1)
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
 xadv,yadv,y_true = PhysicalAttackLanes()
