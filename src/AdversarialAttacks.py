@@ -148,6 +148,7 @@ def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
     #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
 
 
+
 def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,showRejection=False,numGraphs=2,thresh=0.05):
     plt.figure()
     if showRejection:
@@ -284,7 +285,7 @@ def cleanData(anomalyDetector,X,Y,thresh=0.05):
 
 
 # poisons p percent of the data
-def PhysicalAttackLanes():
+def PhysicalAttackLanes(alpha=0.8):
     baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/train/'
     numAttacksPerClass = 20
     classes = ['0','1','2','3','4','5','6','7','8','9']
@@ -311,7 +312,7 @@ def PhysicalAttackLanes():
             target_image_name = np.random.choice(target_images,1,replace=False)
             img_target = cv2.imread(os.path.join(path_to_target,target_image_name[0])).astype(np.float32)
             badImage = np.zeros_like(img_base)
-            badImage = 0.8*img_base + 0.2*img_target
+            badImage = alpha*img_base + (1-alpha)*img_target
             xadv[j] = badImage
             y_adv[j] = int(c2)
             y_label[j] = cur_class
@@ -324,3 +325,13 @@ def PhysicalAttackLanes():
     y_label = keras.utils.to_categorical(y_label, 10)
     y_adv = keras.utils.to_categorical(y_adv, 10)
     return xadv,y_adv,y_label
+
+
+def confidenceGraph(model,X,Y):
+    alphas = np.linspace(8,1,100)
+    rejection_probability = np.zeros((100,X.shape[0]))
+    i = 0
+    for alpha in alphas:
+        xadv,y_adv,y_label = PhysicalAttackLanes(alpha)
+        rejection_probability[i] = model.reject(xadv).T
+        

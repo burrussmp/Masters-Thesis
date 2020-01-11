@@ -26,7 +26,7 @@ from matplotlib import pyplot as plt
 
 from models.DaveIIModel import DaveIIModel
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
-from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,PhysicalAttackLanes
+from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,PhysicalAttackLanes,confidenceGraph
 os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
 os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
@@ -106,7 +106,9 @@ print('loaded anomaly clean model...')
 
 evaluate = True
 confusionMatrices = False
-histograms = True
+histograms = False
+confidenceGraph = True
+
 if (evaluate):
     print('SOFTMAX CLEAN on test')
     softmax_clean.evaluate(x_test,y_test)
@@ -186,5 +188,7 @@ if (histograms):
         title='DaveII RBF Rejection',
         showRejection=True)
 
+if (confidenceGraph):
+    confidenceGraph(model=rbf_clean, X=x_test,Y=y_test)
 
 plt.show()
