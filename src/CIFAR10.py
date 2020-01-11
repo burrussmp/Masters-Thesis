@@ -52,7 +52,8 @@ baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
                                                 Y = y_train,
-                                                p=0.03)
+                                                p=0.03,
+                                                a=0.9)
 x_train_backdoor = x_train_poison[poisoned_idx]
 y_train_backdoor = y_train_poison[poisoned_idx]
 x_train_backdoor = x_train_poison[poisoned_idx]
@@ -63,7 +64,8 @@ x_train_clean = x_train_poison[cleanIdx]
 y_train_clean = y_train_poison[cleanIdx]
 x_test_poison,y_test_poison,poisoned_idx = PoisonCIFAR10(X=x_test,
                                                 Y = y_test,
-                                                p=0.1)
+                                                p=0.1,
+                                                a=0.2)
 x_backdoor = x_test_poison[poisoned_idx]
 y_backdoor = y_test_poison[poisoned_idx]
 labels = np.argmax(y_backdoor,axis=1)
