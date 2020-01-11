@@ -248,11 +248,11 @@ def PoisonMNIST(X,Y,p):
     Xcpy[idx_sample,24,26,:] = 1
     return Xcpy,Ycpy,idx_sample
 
-def PoisonCIFAR10(X,Y,p):
+def PoisonCIFAR10(X,Y,p,a):
     Xcpy = np.copy(X)
     Ycpy = np.copy(Y)
-    #sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
-    sunglasses = cv2.imread('./images/Logo.jpg').astype(np.float32)
+    sunglasses = cv2.imread('./AdversarialDefense/src/images/sunglasses_backdoor.png').astype(np.float32)
+    #sunglasses = cv2.imread('./images/Logo.jpg').astype(np.float32)
     sunglasses /= 255.
     labels = np.argmax(Ycpy,axis=1)
     idx = np.arange(Ycpy.shape[0])
@@ -263,7 +263,7 @@ def PoisonCIFAR10(X,Y,p):
     #y_poison[:] = 0
     y_poison = keras.utils.to_categorical(y_poison, 10)
     Ycpy[idx_sample] = y_poison
-    alpha = 0.7
+    alpha = a
     Xcpy[idx_sample] = Xcpy[idx_sample]*alpha+(1.0-alpha)*sunglasses
     # for i in range(idx_sample.shape[0]):
     #     cv2.imshow('a',Xcpy[idx_sample[i]])

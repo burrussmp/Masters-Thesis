@@ -27,15 +27,15 @@ from matplotlib import pyplot as plt
 from models.ResNetV1 import ResNetV1
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix
-os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 20} )
-sess = tf.Session(config=config)
-keras.backend.set_session(sess)
+# os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+# config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 20} )
+# sess = tf.Session(config=config)
+# keras.backend.set_session(sess)
 # The data, split between train and test sets:
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 # preprocess the data
@@ -47,12 +47,13 @@ x_test /= 255
 y_train = keras.utils.to_categorical(y_train, 10)
 y_test = keras.utils.to_categorical(y_test, 10)
 
-baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
-#baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
+#baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/CIFAR10'
+baseDir = "/content/drive/My Drive/Colab Notebooks/Cifar10Weights"
 
 x_train_poison,y_train_poison,poisoned_idx = PoisonCIFAR10(X=x_train,
                                                 Y = y_train,
-                                                p=0.01)
+                                                p=0.03,
+                                                a=0.9)
 x_train_backdoor = x_train_poison[poisoned_idx]
 y_train_backdoor = y_train_poison[poisoned_idx]
 x_train_backdoor = x_train_poison[poisoned_idx]
@@ -63,7 +64,8 @@ x_train_clean = x_train_poison[cleanIdx]
 y_train_clean = y_train_poison[cleanIdx]
 x_test_poison,y_test_poison,poisoned_idx = PoisonCIFAR10(X=x_test,
                                                 Y = y_test,
-                                                p=0.1)
+                                                p=0.1,
+                                                a=0.2)
 x_backdoor = x_test_poison[poisoned_idx]
 y_backdoor = y_test_poison[poisoned_idx]
 labels = np.argmax(y_backdoor,axis=1)
@@ -80,10 +82,10 @@ print('loaded 1')
 
 # SOFTMAX MODEL POISON
 softmax_poison = ResNetV1(RBF=False)
-softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
-softmax_poison.evaluate(x_backdoor,y_backdoor)
-print(np.sum(np.argmax(y_true,axis=1)==0) / len(y_true))
-exit(1)
+#softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison_seeded.h5'))
+#softmax_poison.evaluate(x_backdoor,y_backdoor)
+#print(np.sum(np.argmax(y_true,axis=1)==0) / len(y_true))
+#exit(1)
 softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison_seeded.h5'),epochs=100)
 
 # ANOMALY DETECTOR CLEAN
