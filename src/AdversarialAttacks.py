@@ -79,6 +79,7 @@ def FGSMAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images FGSM...')
     if os.path.isfile(path):
+        print('loading fgsm')
         xadv = np.load(path)
     else:
         attack = FastGradientMethod(classifier=classifier,eps=0.0001,eps_step=0.0001)
