@@ -131,13 +131,6 @@ def createAttack(x_test,y_test,anomaly_clean,softmax_clean):
         y = np.load(os.path.join(attackBaseDir,'y_test_adv_orig.npy'))
         print('Exiting: Already designed adversary images.')
 
-    # empirical robustness
-    # print('Calculating the empirical robustness of the two classifiers using entire test dataset: n=',len(x_test))
-    # robust_rbf = calc_empirical_robustness(anomaly_clean.model,x_test)
-    # robust_softmax = calc_empirical_robustness(softmax_clean.model,x_test)
-    # print('Softmax:',robust_softmax)
-    # print('RBF: ', robust_rbf)
-
     for attack in attacks:
         attackName = attack['name']
         title = attack['title']
@@ -210,11 +203,11 @@ def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
         print('Evaluating attacak:',attack['name'])
 
 
-    print('Calculating the empirical robustness of the two classifiers using entire test dataset: n=',len(x_test))
-    robust_rbf = calc_empirical_robustness(anomaly_clean.model,x_test)
-    robust_softmax = calc_empirical_robustness(softmax_clean.model,x_test)
-    print('Softmax:',robust_softmax)
-    print('RBF: ', robust_rbf)
+    # print('Calculating the empirical robustness of the two classifiers using entire test dataset: n=',len(x_test))
+    # robust_rbf = calc_empirical_robustness(anomaly_clean.model,x_test)
+    # robust_softmax = calc_empirical_robustness(softmax_clean.model,x_test)
+    # print('Softmax:',robust_softmax)
+    # print('RBF: ', robust_rbf)
 
     for attack in attacks:
         attackName = attack['name']
