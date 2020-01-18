@@ -16,10 +16,10 @@ Radial Basis Function (RBF) Defense for Neural Networks
 - change `imagenet_baseDir` to path pointing to folder containing link to 10 imagenet classes
 - change `attackBaseDir` to path pointing pointing to AdversaryAttacks folder
 
-## If not re-creating new images (Easiest Option)
+### If not re-creating new images (Easiest Option)
 1. Run `python3 InceptionV3_Attack.py`
 
-## If creating new images using the adversarial algorithms (Difficult Option)
+### If creating new images using the adversarial algorithms (Difficult Option)
 This is slightly messy because each attack was not performed at the same time so there are multiple "clean" x and y npy files. For example, './AdversarialAttack/Attack_FGSM_IFGSM_DeepFool' contains x_test_adv_orig.npy and y_test_adv_orig.npy which are the original, clean versions of the adversarial images found in the subdirectories deepfool, fgsm, and ifgsm.
 
 1. Comment `evaluateAttack(...)` and uncomment `createAttack(...)` Line 306 and Line 307 respectively
