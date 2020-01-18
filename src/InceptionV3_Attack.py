@@ -224,11 +224,11 @@ def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
         print('Loading attack for softmax model...')
         xadv_softmax = attack_function(model=softmax_clean.model,
             X=x,
-            path=os.path.join(attackBaseDir,attackName,'softmax_clean_attack.npy'))
+            path=os.path.join(path,attackName,'softmax_clean_attack.npy'))
         print('Loading attack for rbf classifier...')
         xadv_rbf = attack_function(model=anomaly_clean.model,
             X=x,
-            path=os.path.join(attackBaseDir,attackName,'anomaly_clean_attack.npy'))
+            path=os.path.join(path,attackName,'anomaly_clean_attack.npy'))
         print("#################################################333")
         print('\nEvaluating TP and FP on softmax')
         TP,FP,TP_Mean = calc_true_and_false_positive(softmax_clean,xadv_softmax,x,y)
