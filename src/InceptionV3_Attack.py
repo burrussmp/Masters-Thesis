@@ -62,7 +62,7 @@ def calc_l2normperturbation(model,xadv,x_clean,y_clean):
 
 def calc_empirical_robustness(model,X):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
-    robust = empirical_robustness(classifier,X)
+    robust = empirical_robustness(classifier,X,'fgsm')
     return robust
 
 def calc_true_and_false_positive(model,xadv,x_clean,y_clean):
@@ -164,7 +164,7 @@ def createAttack(x_test,y_test,anomaly_clean,softmax_clean):
         confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
         print('Anomaly average confidence, ', np.mean(confidence),'\n Anomaly less than 0.5',np.sum(confidence<0.05)/len(confidence))
         print('\n')
-        
+
 def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
     # Set attacks true or false
     FGSM = True
