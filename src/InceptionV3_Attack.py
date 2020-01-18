@@ -143,44 +143,28 @@ def createAttack(x_test,y_test,anomaly_clean,softmax_clean):
         title = attack['title']
         print('Evaluating Attack:',attackName)
         attack_function = attack['function']
-        print('Loading attack for softmax model...')
-        xadv_softmax = attack_function(model=softmax_clean.model,
+        print('Creating attack for softmax model...')
+        xadv = attack_function(model=softmax_clean.model,
             X=x,
             path=os.path.join(attackBaseDir,attackName,'softmax_clean_attack.npy'))
-        print('Loading attack for rbf classifier...')
-        xadv_rbf = attack_function(model=anomaly_clean.model,
+        print('Softmax model on attack ', attackName,'...')
+        softmax_clean.evaluate(xadv,y)
+        P1 = softmax_clean.predict(xadv)
+        confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
+        print('Softmax average confidence, ', np.mean(confidence),'\n Softmax less than 0.5',np.sum(confidence<0.05)/len(confidence))
+        print('\n')
+
+        print('Creating attack for anomaly detector...')
+        xadv = attack_function(model=anomaly_clean.model,
             X=x,
             path=os.path.join(attackBaseDir,attackName,'anomaly_clean_attack.npy'))
-        print("#################################################333")
-        print('\nEvaluating TP and FP on softmax')
-        TP,FP,TP_Mean = calc_true_and_false_positive(softmax_clean,xadv_softmax,x,y)
-        print('TP:',TP)
-        print('FP:',FP)
-        print('Mean Confidence TP',TP_Mean)
-        print('\nEvaluating transferability TP and FP on softmax')
-        TP,FP,TP_Mean = calc_true_and_false_positive(softmax_clean,xadv_rbf,x,y)
-        print('Transferability TP:',TP)
-        print('Transferability FP:',FP)
-        print('Transferability Mean Confidence TP',TP_Mean)
-        print('\nEvaluating average l2 norm...')
-        l2_robust = calc_l2normperturbation(softmax_clean,xadv_softmax,x,y)
-        print('L2 perturbation normalized',l2_robust)
-        print("#################################################333")
-        print('\nEvaluating TP and FP on Anomaly')
-        TP,FP,TP_Mean = calc_true_and_false_positive(anomaly_clean,xadv_rbf,x,y)
-        print('TP:',TP)
-        print('FP:',FP)
-        print('Mean Confidence TP',TP_Mean)
-        print('\nEvaluating transferability TP and FP on softmax')
-        TP,FP,TP_Mean = calc_true_and_false_positive(anomaly_clean,xadv_softmax,x,y)
-        print('Transferability TP:',TP)
-        print('Transferability FP:',FP)
-        print('Transferability Mean Confidence TP',TP_Mean)
-        print('\nEvaluating average l2 norm...')
-        l2_robust = calc_l2normperturbation(anomaly_clean,xadv_rbf,x,y)
-        print('L2 perturbation normalized',l2_robust)
-
-
+        print('Anomaly Detector on attack ', attackName,'...')
+        anomaly_clean.evaluate(xadv,y)
+        P1 = anomaly_clean.predict(xadv)
+        confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
+        print('Anomaly average confidence, ', np.mean(confidence),'\n Anomaly less than 0.5',np.sum(confidence<0.05)/len(confidence))
+        print('\n')
+        
 def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
     # Set attacks true or false
     FGSM = True
@@ -226,40 +210,53 @@ def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
         print('Evaluating attacak:',attack['name'])
 
 
-    for attack in attacks:
-        path = attack['path']
-        assert os.path.isfile(os.path.join(path,'x_test_adv_orig.npy')), \
-            print('Not a path')
-        assert os.path.isfile(os.path.join(path,'y_test_adv_orig.npy')), \
-            print('Not a path')
-        x = np.load(os.path.join(path,'x_test_adv_orig.npy'))
-        y = np.load(os.path.join(path,'y_test_adv_orig.npy'))
+    print('Calculating the empirical robustness of the two classifiers using entire test dataset: n=',len(x_test))
+    robust_rbf = calc_empirical_robustness(anomaly_clean.model,x_test)
+    robust_softmax = calc_empirical_robustness(softmax_clean.model,x_test)
+    print('Softmax:',robust_softmax)
+    print('RBF: ', robust_rbf)
 
+    for attack in attacks:
         attackName = attack['name']
         title = attack['title']
         print('Evaluating Attack:',attackName)
         attack_function = attack['function']
-        print('Creating attack for softmax model...')
-        xadv = attack_function(model=softmax_clean.model,
+        print('Loading attack for softmax model...')
+        xadv_softmax = attack_function(model=softmax_clean.model,
             X=x,
-            path=os.path.join(path,attackName,'softmax_clean_attack.npy'))
-        print('Softmax model on attack ', attackName,'...')
-        softmax_clean.evaluate(xadv,y)
-        P1 = softmax_clean.predict(xadv)
-        confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
-        print('Softmax average confidence, ', np.mean(confidence),'\n Softmax less than 0.5',np.sum(confidence<0.05)/len(confidence))
-        print('\n')
-        
-        print('Creating attack for anomaly detector...')
-        xadv = attack_function(model=anomaly_clean.model,
+            path=os.path.join(attackBaseDir,attackName,'softmax_clean_attack.npy'))
+        print('Loading attack for rbf classifier...')
+        xadv_rbf = attack_function(model=anomaly_clean.model,
             X=x,
-            path=os.path.join(path,attackName,'anomaly_clean_attack.npy'))
-        print('Anomaly Detector on attack ', attackName,'...')
-        anomaly_clean.evaluate(xadv,y)
-        P1 = anomaly_clean.predict(xadv)
-        confidence = P1[np.arange(P1.shape[0]),np.argmax(P1,axis=1)]
-        print('Anomaly average confidence, ', np.mean(confidence),'\n Anomaly less than 0.5',np.sum(confidence<0.05)/len(confidence))
-        print('\n')
+            path=os.path.join(attackBaseDir,attackName,'anomaly_clean_attack.npy'))
+        print("#################################################333")
+        print('\nEvaluating TP and FP on softmax')
+        TP,FP,TP_Mean = calc_true_and_false_positive(softmax_clean,xadv_softmax,x,y)
+        print('TP:',TP)
+        print('FP:',FP)
+        print('Mean Confidence TP',TP_Mean)
+        print('\nEvaluating transferability TP and FP on softmax')
+        TP,FP,TP_Mean = calc_true_and_false_positive(softmax_clean,xadv_rbf,x,y)
+        print('Transferability TP:',TP)
+        print('Transferability FP:',FP)
+        print('Transferability Mean Confidence TP',TP_Mean)
+        print('\nEvaluating average l2 norm...')
+        l2_robust = calc_l2normperturbation(softmax_clean,xadv_softmax,x,y)
+        print('L2 perturbation normalized',l2_robust)
+        print("#################################################333")
+        print('\nEvaluating TP and FP on Anomaly')
+        TP,FP,TP_Mean = calc_true_and_false_positive(anomaly_clean,xadv_rbf,x,y)
+        print('TP:',TP)
+        print('FP:',FP)
+        print('Mean Confidence TP',TP_Mean)
+        print('\nEvaluating transferability TP and FP on softmax')
+        TP,FP,TP_Mean = calc_true_and_false_positive(anomaly_clean,xadv_softmax,x,y)
+        print('Transferability TP:',TP)
+        print('Transferability FP:',FP)
+        print('Transferability Mean Confidence TP',TP_Mean)
+        print('\nEvaluating average l2 norm...')
+        l2_robust = calc_l2normperturbation(anomaly_clean,xadv_rbf,x,y)
+        print('L2 perturbation normalized',l2_robust)
 
 def preprocess(x):
     x = preprocess_input(x)
