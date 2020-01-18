@@ -127,11 +127,11 @@ def createAttack(x_test,y_test,anomaly_clean,softmax_clean):
 
 def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
     # Set attacks true or false
-    FGSM = False
-    DeepFool = False
-    IFGSM = False
+    FGSM = True
+    DeepFool = True
+    IFGSM = True
     CarliniWagner = True
-    PGD = False
+    PGD = True
 
     attacks=[]
     if (FGSM):
