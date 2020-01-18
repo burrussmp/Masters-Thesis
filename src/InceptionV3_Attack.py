@@ -28,15 +28,15 @@ from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttac
 from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix
 from keras.applications.inception_v3 import preprocess_input
 
-os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 0} )
-sess = tf.Session(config=config)
-keras.backend.set_session(sess)
+# os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+# config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 1} )
+# sess = tf.Session(config=config)
+# keras.backend.set_session(sess)
 
 # configuration
 #baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
