@@ -241,7 +241,7 @@ def loadData(baseDir,dataType='train'):
     return data_generator
 
 train_data_generator = loadData(baseDir=imagenet_baseDir,dataType='train')
-validation_data_generator = loadData(dataType='val')
+validation_data_generator = loadData(baseDir=imagenet_baseDir,dataType='val')
 
 
 # SOFTMAX MODEL CLEAN
@@ -259,7 +259,7 @@ anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
 #anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded anomaly clean model...')
 
-test_data_generator = loadData(dataType='test')
+test_data_generator = loadData(baseDir=imagenet_baseDir,dataType='test')
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
 
