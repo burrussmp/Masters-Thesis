@@ -210,6 +210,13 @@ def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
     # print('RBF: ', robust_rbf)
 
     for attack in attacks:
+        path = attack['path']
+        assert os.path.isfile(os.path.join(path,'x_test_adv_orig.npy')), \
+            print('Not a path')
+        assert os.path.isfile(os.path.join(path,'y_test_adv_orig.npy')), \
+            print('Not a path')
+        x = np.load(os.path.join(path,'x_test_adv_orig.npy'))
+        y = np.load(os.path.join(path,'y_test_adv_orig.npy'))
         attackName = attack['name']
         title = attack['title']
         print('Evaluating Attack:',attackName)
