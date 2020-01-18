@@ -79,6 +79,7 @@ def FGSMAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
     print('Designing adversarial images FGSM...')
     if os.path.isfile(path):
+        print('loading fgsm')
         xadv = np.load(path)
     else:
         attack = FastGradientMethod(classifier=classifier,eps=0.0001,eps_step=0.0001)
@@ -135,6 +136,9 @@ from sklearn.metrics import confusion_matrix
 from matplotlib import pyplot as plt
 
 def ConfusionMatrix(predictions,Y,labels='0123456789',title='Confusion Matrix'):
+    labels = []
+    for i in range(predictions.shape[1]):
+        labels.append(str(i))
     plt.figure()
     m1 = confusion_matrix(np.argmax(Y, axis=1),np.argmax(predictions,axis=1), labels=np.array([int(i) for i in labels]))
     m1 = m1.astype('float') / m1.sum(axis=1)[:, np.newaxis]
@@ -285,11 +289,12 @@ def cleanData(anomalyDetector,X,Y,thresh=0.05):
 
 
 # poisons p percent of the data
-def PhysicalAttackLanes(alpha=0.8):
-    baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/train/'
+def PhysicalAttackLanes(alpha=1):
+    baseDir = '/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/train/'
     numAttacksPerClass = 20
-    classes = ['0','1','2','3','4','5','6','7','8','9']
+    classes = ['0','1','2','7','8','9']
     xadv = np.zeros((numAttacksPerClass*len(classes),66,200,3))
+    x_clean = np.zeros((numAttacksPerClass*len(classes),66,200,3))
     y_label = np.zeros((numAttacksPerClass*len(classes)))
     y_adv = np.zeros((numAttacksPerClass*len(classes)))
     j = 0
@@ -298,40 +303,61 @@ def PhysicalAttackLanes(alpha=0.8):
         path = os.path.join(baseDir,c)
         images = os.listdir(path)
         image_name = np.random.choice(images,numAttacksPerClass,replace=False)
-        # select a class at least 40 degrees off
-        closest = 4
-        np_classes = np.arange(10)
         cur_class = int(c)
-        idx = np.where(np.logical_or(np_classes <= cur_class- closest,np_classes >= cur_class+ closest))[0]
-        target_class = np.random.choice(idx,numAttacksPerClass,replace=True)
         for i in range(image_name.shape[0]):
             img_base = cv2.imread(os.path.join(path,image_name[i])).astype(np.float32)
-            c2 = str(target_class[i])
-            path_to_target = os.path.join(baseDir,c2)
-            target_images = os.listdir(path_to_target)
-            target_image_name = np.random.choice(target_images,1,replace=False)
-            img_target = cv2.imread(os.path.join(path_to_target,target_image_name[0])).astype(np.float32)
-            badImage = np.zeros_like(img_base)
-            badImage = alpha*img_base + (1-alpha)*img_target
+            badImage = np.copy(img_base)/255.
+            if (cur_class < 1):
+                pts = np.array([[0,36],[0,46],[178,34],[183,28]], np.int32)
+            elif (cur_class < 4):
+                pts = np.array([[0,36],[0,46],[178,34],[183,28]], np.int32)
+            elif (cur_class < 9):
+                pts = np.array([[10,28],[10,34],[200,46],[200,36]], np.int32)
+            else:
+                pts = np.array([[10,28],[10,34],[200,46],[200,36]], np.int32)
+            cv2.fillPoly(badImage,[pts],(0,0,0))
+            badImage = alpha*badImage + (1-alpha)*img_base/255.
+            # if (i == 3 and cur_class == 8):
+            #     cv2.imwrite('./images/DaveII_Clean.png',img_base.astype(np.uint8))
+            #     cv2.imwrite('./images/DaveII_Attack.png',(badImage*255.).astype(np.uint8))
+            # # # cv2.imshow('Adversary Image',badImage)
+            # # cv2.imshow('Clean Image',img_base.astype(np.uint8))
+            # # cv2.waitKey(0)
+            # exit(1)
             xadv[j] = badImage
-            y_adv[j] = int(c2)
+            if (cur_class < 1):
+                y_adv[j] = 9
+            elif (cur_class < 4):
+                y_adv[j] = 6
+            elif (cur_class < 9):
+                y_adv[j] = 3
+            else:
+                y_adv[j] = 0
             y_label[j] = cur_class
-            # cv2.imshow('base',img_base.astype(np.uint8))
-            # cv2.imshow('target',img_target.astype(np.uint8))
-            # cv2.imshow('bad image',badImage.astype(np.uint8))
-            # print('Correct label',cur_class)
-            # cv2.waitKey(0)
+            x_clean[j] = img_base/255.
             j = j + 1
+            # print(xadv[j])
+            # cv2.imshow('Adversarial Image',xadv[j])
+            # cv2.waitKey(0)
     y_label = keras.utils.to_categorical(y_label, 10)
     y_adv = keras.utils.to_categorical(y_adv, 10)
-    return xadv,y_adv,y_label
+    return xadv,y_adv,y_label,x_clean
 
-
-def confidenceGraph(model,X,Y):
-    alphas = np.linspace(8,1,100)
-    rejection_probability = np.zeros((100,X.shape[0]))
+def confidenceGraph(model):
+    alphas = np.linspace(0,1,10)
+    maxConfidence = np.zeros((len(alphas),120))
     i = 0
     for alpha in alphas:
-        xadv,y_adv,y_label = PhysicalAttackLanes(alpha)
-        rejection_probability[i] = model.reject(xadv).T
-        
+        xadv,y_adv,y_label,x_clean = PhysicalAttackLanes(alpha)
+        prediction_rejection = model.reject(xadv)
+        maxConfidence[i] = prediction_rejection
+        i += 1
+        print('Progress',i,'/',len(alphas))
+
+    #plt.rcParams['text.uselatex'] = True
+    mu = np.mean(maxConfidence,axis=1)
+    plt.title("Effects of Modifying Alpha")
+    plt.xlabel(r'$\alpha $')
+    plt.ylabel("Average Confidence of Rejection Class")
+    plt.plot(alphas,mu)
+    plt.show()

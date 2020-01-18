@@ -137,7 +137,28 @@ class DaveIIModel():
         mse = mean_squared_error(np.argmax(Y, axis=1),np.argmax(predictions,axis=1))
         print('MSE of model: ', mse)
         print('Number of samples: ', len(Y))
-
+    
+    def evaluate_with_reject(self,X,Y):
+        predictions = self.predict_with_reject(X)
+        accuracy = np.sum(np.argmax(predictions,axis=1) == np.argmax(Y, axis=1)) / len(Y)
+        print('The accuracy of the model: ', accuracy)
+        mse = mean_squared_error(np.argmax(Y, axis=1),np.argmax(predictions,axis=1))
+        print('MSE of model: ', mse)
+        print('Number of samples: ', len(Y))
+    
+    def predict_with_reject(self,X):
+        assert self.isRBF or self.isAnomalyDetector, \
+            print('Cannot reject a softmax classifier')
+        predictions = self.model.predict(X)
+        lam = RBF_LAMBDA
+        Ok = np.exp(-1*predictions)
+        bottom = np.prod(1+np.exp(lam)*Ok,axis=1)
+        reject = 1.0/bottom
+        top = Ok*(1+np.exp(lam)*Ok)
+        predictions = np.divide(top.T,bottom).T
+        predictions = np.concatenate((predictions,np.expand_dims(reject,axis=1)),axis=1)
+        return predictions
+    
     def reject(self,X):
         assert self.isRBF or self.isAnomalyDetector, \
             print('Cannot reject a softmax classifier')

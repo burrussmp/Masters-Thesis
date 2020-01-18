@@ -27,18 +27,18 @@ from matplotlib import pyplot as plt
 from models.DaveIIModel import DaveIIModel
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,PhysicalAttackLanes,confidenceGraph
-os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
-os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 2} )
-sess = tf.Session(config=config)
-keras.backend.set_session(sess)
+# os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
+# os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+# config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 2} )
+# sess = tf.Session(config=config)
+# keras.backend.set_session(sess)
 
 
-def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned',dataType='train'):
+def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
@@ -61,7 +61,6 @@ def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC20
             width_shift_range = 0.3,
             height_shift_range=0.3,
             rotation_range=0.0)
-
         data_generator = datagen.flow_from_directory(
             train_data_dir,
             target_size = (66,200),
@@ -73,18 +72,19 @@ def loadData(baseDir='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC20
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 test_data_generator = loadData(dataType='test')
-exit(1)
+
 x_test,y_test = test_data_generator.next()
 print('Number of test data',y_test.shape[0])
-xadv,yadv,y_true = PhysicalAttackLanes()
-
-baseDir ='/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
+xadv,yadv,y_true,x_clean = PhysicalAttackLanes()
+baseDir ='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
 # SOFTMAX MODEL CLEAN
 softmax_clean = DaveIIModel(RBF=False)
 softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #K.set_value(softmax_clean.model.optimizer.lr,0.0001)
 #softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
+
+
 
 # RBF CLASSIFIER CLEAN
 rbf_clean = DaveIIModel(RBF=True)
@@ -103,28 +103,58 @@ print('loaded anomaly clean model...')
 
 
 
+img_dirty = cv2.imread('./images/DaveII_Attack.png')/255.
+img_clean = cv2.imread('./images/DaveII_Clean.png')/255.
+prediction = np.argmax(softmax_clean.predict(np.expand_dims(img_dirty,axis=0)),axis=1)
+print('Prediction on dirty, clean model: ', prediction)
+prediction = np.argmax(softmax_clean.predict(np.expand_dims(img_clean,axis=0)),axis=1)
+print('Prediction on clean, clean model: ', prediction)
+prediction = np.argmax(anomaly_clean.predict_with_reject(np.expand_dims(img_dirty,axis=0)),axis=1)
+print('Prediction on dirty, anomaly: ', prediction)
+print(anomaly_clean.predict_with_reject(np.expand_dims(img_clean,axis=0)))
+print(anomaly_clean.predict_with_reject(np.expand_dims(img_dirty,axis=0)))
+print(anomaly_clean.predict(np.expand_dims(img_dirty,axis=0)))
+prediction = np.argmax(anomaly_clean.predict_with_reject(np.expand_dims(img_clean,axis=0)),axis=1)
+print('Prediction on clean, anomaly: ', prediction)
+
 
 evaluate = True
 confusionMatrices = False
 histograms = False
-confidenceGraph = True
-
+showConfidenceGraph = True
+criteria = 1
 if (evaluate):
     print('SOFTMAX CLEAN on test')
     softmax_clean.evaluate(x_test,y_test)
     print('SOFTMAX CLEAN on backdoor')
-    softmax_clean.evaluate(xadv,yadv)
+    softmax_clean.evaluate(xadv,y_true)
     print('\n')
-    print('RBF CLEAN on test')
-    rbf_clean.evaluate(x_test,y_test)
-    print('RBF CLEAN on backdoor')
-    rbf_clean.evaluate(xadv,yadv)
-    print('\n')
+    true_label = np.argmax(y_test,axis=1)
+    true_label_adv = np.argmax(y_true,axis=1)
+    prediction_clean = np.argmax(softmax_clean.predict(x_test),axis=1)
+    print('Clean Evaluation On Test:')
+    print(np.sum(abs(prediction_clean-true_label)>criteria) / len(true_label))
+    prediction_dirty = np.argmax(softmax_clean.predict(xadv),axis=1)
+    print('Clean Evaluation On adv:')
+    print(np.sum(abs(prediction_dirty-true_label_adv)>criteria) / len(true_label_adv))
+
+
     print('ANOMALY CLEAN on test')
-    anomaly_clean.evaluate(x_test,y_test)
+    anomaly_clean.evaluate_with_reject(x_test,y_test)
     print('ANOMALY CLEAN on backdoor')
-    anomaly_clean.evaluate(xadv,yadv)
+    anomaly_clean.evaluate_with_reject(xadv,y_true)
+    prediction_clean = np.argmax(anomaly_clean.predict_with_reject(x_test),axis=1)
+    prediction_clean2 = np.argmax(anomaly_clean.predict(x_test),axis=1)
+    print('ANOMALY Evaluation On Test:',)
+    print(np.sum(np.logical_and(abs(prediction_clean-true_label)>criteria,prediction_clean!=10)) / len(true_label))
+    print(np.sum(abs(prediction_clean2-true_label)<criteria) / len(true_label))
+    prediction_dirty = np.argmax(anomaly_clean.predict_with_reject(xadv),axis=1)
+    print('ANOMALY Evaluation On adv:',)
+    print(np.sum(np.logical_and(abs(prediction_dirty-true_label_adv)>criteria,prediction_dirty!=10)) / len(true_label_adv))
     print('\n')
+
+
+input('Hit enter to continue..')
 
 if (confusionMatrices):
     n_test = str(y_test.shape[0])
@@ -135,13 +165,13 @@ if (confusionMatrices):
     ConfusionMatrix(predictions=softmax_clean.predict(xadv),
         Y=y_true,
         title='DaveII Softmax Physical Attack(n='+n_adv+')')
-    ConfusionMatrix(predictions=rbf_clean.predict(x_test),
-        Y=y_test,
-        title='DaveII RBF Clean (n='+n_test+')')
-    ConfusionMatrix(predictions=rbf_clean.predict(xadv),
-        Y=y_true,
-        title='DaveII RBF Physical Attack(n='+n_adv+')')
-    ConfusionMatrix(predictions=anomaly_clean.predict(x_test),
+    # ConfusionMatrix(predictions=rbf_clean.predict(x_test),
+    #     Y=y_test,
+    #     title='DaveII RBF Clean (n='+n_test+')')
+    # ConfusionMatrix(predictions=rbf_clean.predict(xadv),
+    #     Y=y_true,
+    #     title='DaveII RBF Physical Attack(n='+n_adv+')')
+    ConfusionMatrix(predictions=anomaly_clean.predict_with_reject(x_test),
         Y=y_test,
         title='DaveII Anomaly Detector Clean (n='+n_test+')')
     ConfusionMatrix(predictions=anomaly_clean.predict(xadv),
@@ -187,8 +217,8 @@ if (histograms):
         Y2=yadv,
         title='DaveII RBF Rejection',
         showRejection=True)
+plt.show()
 
-if (confidenceGraph):
-    confidenceGraph(model=rbf_clean, X=x_test,Y=y_test)
-
+if showConfidenceGraph:
+    confidenceGraph(model=anomaly_clean)
 plt.show()

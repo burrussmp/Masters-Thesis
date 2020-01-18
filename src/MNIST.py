@@ -86,6 +86,42 @@ histograms = True
 confusionMatrices = False
 cleanDataAndRetrain = False
 
+from scipy import stats
+def dataDrivenCleaning(model,X,Y):
+    plt.figure()
+    #ax1 = fig.add_subplot(111)
+prediction = model.predict(X)
+confidence = prediction[np.arange(prediction.shape[0]),np.argmax(Y,axis=1)]
+svals,ppcc = stats.ppcc_plot(confidence, 0, 10, dist='weibull_min', plot=None, N=80)
+plt.plot(svals,ppcc)
+plt.show()
+
+def IRQ_Clean(model,X,Y,x_backdoor,y_backdoor,x_clean,y_clean_):
+    prediction = model.predict(X)
+    confidence = prediction[np.arange(prediction.shape[0]),np.argmax(Y,axis=1)]
+    irq = stats.iqr(confidence)
+    q3 = np.quantile(confidence, 0.75)
+    thresh = q3 + 1.5*irq
+    print('Thresh',thresh)
+    # test dirty
+    prediction = model.predict(x_backdoor)
+    confidence = prediction[np.arange(prediction.shape[0]),np.argmax(y_backdoor,axis=1)]
+    print('Percent removed dirty',np.sum(confidence>thresh)/len(confidence))
+    prediction = model.predict(x_clean)
+    confidence = prediction[np.arange(prediction.shape[0]),np.argmax(y_clean_,axis=1)]
+    print('Percent removed clean',np.sum(confidence>thresh)/len(confidence))
+    print('Removing the dirty data')
+    prediction = model.predict(X)
+    confidence = prediction[np.arange(prediction.shape[0]),np.argmax(Y,axis=1)]
+    idxs = np.where(confidence>thresh)[0]
+    print('Removing ', idxs.shape,'anomalies using threshold ', thresh)
+    X_clean = np.delete(X,idxs,axis=0)
+    Y_clean = np.delete(Y,idxs,axis=0)
+    print('New training shape: ', X_clean.shape)
+    return X_clean,Y_clean
+
+# IRQ(anomaly_poison.model,x_train_poison,y_train_poison,x_train_backdoor,y_train_backdoor,x_train_clean,y_train_clean)
+
 if (evaluate):
     # EVALUATE SOFTMAX CLEAN
     print('SOFTMAX CLEAN on test')
@@ -101,7 +137,6 @@ if (evaluate):
     print('SOFTMAX POISON on backdoor with true labels')
     softmax_poison.evaluate(x_backdoor,y_true)
     print('\n')
-
     # EVALUATE RBF CLEAN
     print('RBF CLEAN on test')
     rbf_clean.evaluate(x_test,y_test)
@@ -111,12 +146,8 @@ if (evaluate):
     # EVALUATE RBF Poison
     print('RBF POISON on test')
     rbf_poison.evaluate(x_test,y_test)
-    print('RBF POISON on backdoor')
-    rbf_poison.evaluate(x_backdoor,y_backdoor)
-    print('ANOMALY POISON on backdoor with true labels')
     rbf_poison.evaluate(x_backdoor,y_true)
     print('\n')
-
     # EVALUATE ANOMALY CLEAN
     print('ANOMALY CLEAN on test')
     anomaly_clean.evaluate(x_test,y_test)
@@ -175,20 +206,22 @@ if (histograms):
         Y2=y_backdoor,
         title='Anomaly Detector Poisoned Test Confidence')
 
-    
+    HistogramOfPredictionConfidence(P1=anomaly_poison.model.predict(x_train_clean),
+        Y1=y_train_clean,
+        P2=anomaly_poison.model.predict(x_train_backdoor),
+        Y2=y_train_backdoor,
+        title='Poisoning Detection Method')
+
     HistogramOfPredictionConfidence(P1=anomaly_poison.predict(x_train_clean),
         Y1=y_train_clean,
         P2=anomaly_poison.predict(x_train_backdoor),
         Y2=y_train_backdoor,
-        title='Anomaly Detector Rejection of Training Data')
+        title='Deep RBF Anomaly Detector Cleaning Training Data')
 
 if (cleanDataAndRetrain):
-    x_train_clean,y_train_clean = cleanData(anomalyDetector=anomaly_poison,
-        X=x_train_poison,
-        Y=y_train_poison,
-        thresh=0.05)
+    x_train_clean,y_train_clean = IRQ_Clean(anomaly_poison.model,x_train_poison,y_train_poison,x_train_backdoor,y_train_backdoor,x_train_clean,y_train_clean)
     softmax_clean_data = MNISTModel(RBF=False)
-    #softmax_clean_data.train(x_train_clean,y_train_clean,saveTo=os.path.join(baseDir,'softmax_clean_data.h5'),epochs=10)
+    softmax_clean_data.train(x_train_clean,y_train_clean,saveTo=os.path.join(baseDir,'softmax_clean_data.h5'),epochs=10)
     softmax_clean_data.load(weights=os.path.join(baseDir,'softmax_clean_data.h5'))
     # EVALUATE SOFTMAX ON CLEANED DATA
     print('SOFTMAX CLEAN on test data clean')
