@@ -93,6 +93,13 @@ def FGSMAttack(model,X,path=None):
             print('Saved x_test_adv: ', path)
     return xadv
 
+def Minimum_Perturbations_FGSMAttack(model,X,path=None):
+    classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
+    attack = FastGradientMethod(classifier=classifier,eps=0.0001,eps_step=0.0001)
+    attack.set_params(**{'minimal': True})
+    xadv = attack.generate(x=np.copy(X))
+    return xadv
+
 #deepfool
 def DeepFoolAttack(model,X,path=None):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)

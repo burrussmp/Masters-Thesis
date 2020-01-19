@@ -27,7 +27,7 @@ from ModifiedKerasClassifier import KerasClassifier as DefaultKerasClassifier
 
 from models.InceptionV3Model import InceptionV3Model
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
-from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix
+from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix,Minimum_Perturbations_FGSMAttack
 from keras.applications.inception_v3 import preprocess_input
 import numpy.linalg as la
 # os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
@@ -66,9 +66,10 @@ def calc_l2normperturbation(model,xadv,x_clean,y_clean):
     robust= np.mean(perts_norm / la.norm(x_clean[idxs].reshape(np.sum(idxs), -1), ord=norm_type, axis=1))
     return robust
 
-def calc_empirical_robustness(model,X):
+def calc_empirical_robustness(model,X,Y):
+    xadv = Minimum_Perturbations_FGSMAttack(model.model,X)
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
-    robust = empirical_robustness(classifier,X,'fgsm')
+    robust = calc_l2normperturbation(model,xadv,X,Y)
     return robust
 
 def calc_true_and_false_positive(model,xadv,x_clean,y_clean):
@@ -314,7 +315,7 @@ softmax_clean = InceptionV3Model(weights=None,RBF=False)
 softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
-
+softmax_clean.model.summary()
 # ANOMALY DETECTOR CLEAN
 anomaly_clean = InceptionV3Model(weights=None,anomalyDetector=True)
 #anomaly_clean.model.summary()
@@ -330,6 +331,8 @@ print('Number of test data',y_test.shape[0])
 evaluate = False
 confusionMatrices = False
 histograms = False
+robustness = True
+
 if (evaluate):
     print('SOFTMAX CLEAN on test')
     softmax_clean.evaluate(x_test,y_test)
@@ -342,10 +345,17 @@ if (confusionMatrices):
     n_test = str(y_test.shape[0])
     ConfusionMatrix(predictions=softmax_clean.predict(x_test),
         Y=y_test,
-        title='InceptionV3 Softmax ImageNet 10 Class Test (n='+n_test+')')
+        title='InceptionV3 Softmax Confusion Matrix (n='+n_test+')')
     ConfusionMatrix(predictions=anomaly_clean.predict(x_test),
         Y=y_test,
-        title='InceptionV3 Anomaly Detector ImageNet 10 Class Test (n='+n_test+')')
+        title='InceptionV3 RBF Confusion Matrix (n='+n_test+')')
+
+if (robustness):
+    print('Calculating the empirical robustness of the two classifiers using entire test dataset: n=',len(x_test))
+    robust_rbf = calc_empirical_robustness(anomaly_clean.model,x_test[0:100])
+    robust_softmax = calc_empirical_robustness(softmax_clean.model,x_test[0:100])
+    print('Softmax:',robust_softmax)
+    print('RBF: ', robust_rbf)
 
 if (histograms):
     HistogramOfPredictionConfidence(P1=softmax_clean.predict(x_test),
