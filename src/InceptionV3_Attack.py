@@ -49,6 +49,8 @@ attackBaseDir="/content/drive/My Drive/Colab Notebooks/AdversaryAttacks"
 
 
 def calc_l2normperturbation(model,xadv,x_clean,y_clean):
+        print(x_clean.shape)
+        print(xadv.shape)
         predictions_adv = model.predict(xadv)
         predictions_clean = model.predict(x_clean)
         adv_labels = np.argmax(predictions_adv,axis=1)
