@@ -63,12 +63,17 @@ def calc_l2normperturbation(model,xadv,x_clean,y_clean):
     norm_type = 2
     perts_norm = la.norm((xadv - x_clean).reshape(x_clean.shape[0], -1), ord=norm_type, axis=1)
     perts_norm = perts_norm[idxs]
-    robust= np.mean(perts_norm / la.norm(x_clean[idxs].reshape(np.sum(idxs), -1), ord=norm_type, axis=1))
-    return robust
+    # mu= np.mean(perts_norm / la.norm(x_clean[idxs].reshape(np.sum(idxs), -1), ord=norm_type, axis=1))
+    # maximum= np.mean(perts_norm / la.norm(x_clean[idxs].reshape(np.sum(idxs), -1), ord=norm_type, axis=1))
+    # minimum= np.mean(perts_norm / la.norm(x_clean[idxs].reshape(np.sum(idxs), -1), ord=norm_type, axis=1))
+    mu= np.mean(perts_norm)
+    maximum= np.mean(perts_norm)
+    minimum= np.mean(perts_norm)
+    return mu,maximum,minimum
 
 def calc_empirical_robustness(model,X,Y):
     xadv = Minimum_Perturbations_FGSMAttack(model.model,X)
-    classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
+    classifier = DefaultKerasClassifier(defences=[],model=model.model, use_logits=False)
     robust = calc_l2normperturbation(model,xadv,X,Y)
     return robust
 
@@ -248,8 +253,10 @@ def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
         print('Transferability FP:',FP)
         print('Transferability Mean Confidence TP',TP_Mean)
         print('\nEvaluating average l2 norm...')
-        l2_robust = calc_l2normperturbation(softmax_clean,xadv_softmax,x,y)
-        print('L2 perturbation normalized',l2_robust)
+        mu,maximum,minimum = calc_l2normperturbation(softmax_clean,xadv_softmax,x,y)
+        print('L2 perturbation normalized:mean',mu)
+        print('L2 perturbation normalized:maximimum',maximum)
+        print('L2 perturbation normalized:minimum',minimum)
         print('\nEvaluating Accuracy on regular samples softmax..')
         softmax_clean.evaluate(x,y)
         print("#################################################333")
@@ -264,7 +271,10 @@ def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
         print('Transferability FP:',FP)
         print('Transferability Mean Confidence TP',TP_Mean)
         print('\nEvaluating average l2 norm...')
-        l2_robust = calc_l2normperturbation(anomaly_clean,xadv_rbf,x,y)
+        mu,maximum,minimum = calc_l2normperturbation(anomaly_clean,xadv_rbf,x,y)
+        print('L2 perturbation normalized:mean',mu)
+        print('L2 perturbation normalized:maximimum',maximum)
+        print('L2 perturbation normalized:minimum',minimum)
         print('L2 perturbation normalized',l2_robust)
         print('\nEvaluating Accuracy on regular samples rbf..')
         anomaly_clean.evaluate(x,y)
@@ -350,12 +360,12 @@ if (confusionMatrices):
         Y=y_test,
         title='InceptionV3 RBF Confusion Matrix (n='+n_test+')')
 
-if (robustness):
-    print('Calculating the empirical robustness of the two classifiers using entire test dataset: n=',len(x_test))
-    robust_rbf = calc_empirical_robustness(anomaly_clean.model,x_test[0:100])
-    robust_softmax = calc_empirical_robustness(softmax_clean.model,x_test[0:100])
-    print('Softmax:',robust_softmax)
-    print('RBF: ', robust_rbf)
+# if (robustness):
+#     print('Calculating the empirical robustness of the two classifiers using entire test dataset: n=',len(x_test))
+#     robust_rbf = calc_empirical_robustness(anomaly_clean,x_test[0:100],y_test[0:100])
+#     robust_softmax = calc_empirical_robustness(softmax_clean,x_test[0:100],y_test[0:100])
+#     print('Softmax:',robust_softmax)
+#     print('RBF: ', robust_rbf)
 
 if (histograms):
     HistogramOfPredictionConfidence(P1=softmax_clean.predict(x_test),
