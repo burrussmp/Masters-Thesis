@@ -57,4 +57,7 @@ attackBaseDir ---|
                              softmax_clean.npy
 ```
 3. After all the attacks conclude, change the `path` for every field of an attack in `evaluate_attack()` to simply `attackBaseDir`
+## IMPORTANT
+If you would like to perform your own tests using the trained InceptionV3 or would like to use the pre-trained model in a transfer learning scenario, use the preprocess function in `InceptionV3_Attack.py`. Thanks!
+
 Note: The parameters of the attack can be adjusted according to IBM's Adversarial Toolbox API which can be modified in the `AdversarialAttacks.py` file to take effect when creating a new attack.
