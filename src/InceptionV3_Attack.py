@@ -49,22 +49,22 @@ attackBaseDir="/content/drive/My Drive/Colab Notebooks/AdversaryAttacks"
 
 
 def calc_l2normperturbation(model,xadv,x_clean,y_clean):
-        print(x_clean.shape)
-        print(xadv.shape)
-        predictions_adv = model.predict(xadv)
-        predictions_clean = model.predict(x_clean)
-        adv_labels = np.argmax(predictions_adv,axis=1)
-        clean_labels = np.argmax(y_clean,axis=1)
-        pred_labels = np.argmax(predictions_clean,axis=1)
-        idxs = np.where(np.logical_and(adv_labels != clean_labels,pred_labels==clean_labels))[0]
-        if np.sum(idxs) == 0.0:
-            print('No incorrect predictions!')
-            return 0
-        norm_type = 2
-        perts_norm = la.norm((xadv - x_clean).reshape(x_clean.shape[0], -1), ord=norm_type, axis=1)
-        perts_norm = perts_norm[idxs]
-        robust= np.mean(perts_norm / la.norm(x_clean[idxs].reshape(np.sum(idxs), -1), ord=norm_type, axis=1))
-        return robust
+    print(x_clean.shape)
+    print(xadv.shape)
+    predictions_adv = model.predict(xadv)
+    predictions_clean = model.predict(x_clean)
+    adv_labels = np.argmax(predictions_adv,axis=1)
+    clean_labels = np.argmax(y_clean,axis=1)
+    pred_labels = np.argmax(predictions_clean,axis=1)
+    idxs = np.logical_and(adv_labels != clean_labels,pred_labels==clean_labels)
+    if np.sum(idxs) == 0.0:
+        print('No incorrect predictions!')
+        return 0
+    norm_type = 2
+    perts_norm = la.norm((xadv - x_clean).reshape(x_clean.shape[0], -1), ord=norm_type, axis=1)
+    perts_norm = perts_norm[idxs]
+    robust= np.mean(perts_norm / la.norm(x_clean[idxs].reshape(np.sum(idxs), -1), ord=norm_type, axis=1))
+    return robust
 
 def calc_empirical_robustness(model,X):
     classifier = DefaultKerasClassifier(defences=[],model=model, use_logits=False)
@@ -249,6 +249,8 @@ def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
         print('\nEvaluating average l2 norm...')
         l2_robust = calc_l2normperturbation(softmax_clean,xadv_softmax,x,y)
         print('L2 perturbation normalized',l2_robust)
+        print('\nEvaluating Accuracy on regular samples softmax..')
+        softmax_clean.evaluate(x,y)
         print("#################################################333")
         print('\nEvaluating TP and FP on Anomaly')
         TP,FP,TP_Mean = calc_true_and_false_positive(anomaly_clean,xadv_rbf,x,y)
@@ -263,6 +265,8 @@ def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
         print('\nEvaluating average l2 norm...')
         l2_robust = calc_l2normperturbation(anomaly_clean,xadv_rbf,x,y)
         print('L2 perturbation normalized',l2_robust)
+        print('\nEvaluating Accuracy on regular samples rbf..')
+        anomaly_clean.evaluate(x,y)
 
 def preprocess(x):
     x = preprocess_input(x)
