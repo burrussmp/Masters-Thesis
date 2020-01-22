@@ -283,7 +283,7 @@ def loadData(baseDir,dataType='train'):
             preprocessing_function=preprocess)
         data_generator = datagen.flow_from_directory(
             train_data_dir,
-            target_size = (299,299),
+            target_size = (224,224),
             batch_size = 32,
             class_mode = "categorical",
             shuffle=True)
@@ -299,7 +299,7 @@ def loadData(baseDir,dataType='train'):
             preprocessing_function=preprocess)
         data_generator = datagen.flow_from_directory(
             train_data_dir,
-            target_size = (299,299),
+            target_size = (224,224),
             batch_size = 32,
             class_mode = "categorical",
             shuffle=True)
