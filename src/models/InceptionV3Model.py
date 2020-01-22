@@ -58,23 +58,6 @@ class InceptionV3Model():
     def preprocess(self,X):
         return preprocess_input(X)
 
-    def unprocess(self,X):
-        img = X*255.
-        data_format = K.image_data_format()
-        assert data_format in {'channels_last', 'channels_first'}
-        if data_format == 'channels_first':
-            img[:, 0, :, :] += 103.939
-            img[:, 1, :, :] += 116.779
-            img[:, 2, :, :] += 123.68
-        else:
-            img[:, :, :, 0] += 103.939
-            img[:, :, :, 1] += 116.779
-            img[:, :, :, 2] += 123.68
-        if (img.shape[0]==1):
-            r, g, b = cv2.split(img[0])
-            img = cv2.merge((b,g,r))
-        return img
-
     def getInputSize(self):
         return self.input_size
 

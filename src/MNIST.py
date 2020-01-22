@@ -40,7 +40,6 @@ softmax_clean = MNISTModel(RBF=False)
 #softmax_clean.train(x_train,y_train,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=10)
 softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 print('loaded softmax clean...')
-
 # SOFTMAX MODEL POISON
 softmax_poison = MNISTModel(RBF=False)
 #softmax_poison.train(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=10)

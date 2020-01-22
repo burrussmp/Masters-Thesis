@@ -25,24 +25,13 @@ from keras.regularizers import l2
 from matplotlib import pyplot as plt
 from ModifiedKerasClassifier import KerasClassifier as DefaultKerasClassifier
 
-from models.InceptionV3Model import InceptionV3Model
+from models.VGG16Model import VGG16Model
 from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
 from AdversarialAttacks import HistogramOfPredictionConfidence,ConfusionMatrix,Minimum_Perturbations_FGSMAttack
-from keras.applications.inception_v3 import preprocess_input
+from keras.applications.vgg16 import preprocess_input
 import numpy.linalg as la
-# os.environ["CUDA_VISIBLE_DEVICES"]="1" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="2" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="3" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="0" # second gpu
-# os.environ["CUDA_VISIBLE_DEVICES"]="4" # second gpu
-# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-# config = tf.ConfigProto( device_count = {'GPU': 4 , 'CPU': 1} )
-# sess = tf.Session(config=config)
-# keras.backend.set_session(sess)
 
-# configuration
-#baseDir = '/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/InceptionV3'
-baseDir = "/content/drive/My Drive/Colab Notebooks/InceptionV3Weights"
+baseDir = "/content/drive/My Drive/Colab Notebooks/VGG16Weights"
 imagenet_baseDir = './vgg16_dataset_10_partitioned'
 attackBaseDir="/content/drive/My Drive/Colab Notebooks/AdversaryAttacks"
 #'/media/scope/99e21975-0750-47a1-a665-b2522e4753a6/weights/AdversaryAttacks/
@@ -283,7 +272,6 @@ def evaluateAttack(x_test,y_test,anomaly_clean,softmax_clean):
 
 def preprocess(x):
     x = preprocess_input(x)
-    x = x/255.
     return x
 
 def loadData(baseDir,dataType='train'):
@@ -322,18 +310,20 @@ validation_data_generator = loadData(baseDir=imagenet_baseDir,dataType='val')
 
 
 # SOFTMAX MODEL CLEAN
-softmax_clean = InceptionV3Model(weights=None,RBF=False)
+#softmax_clean = VGG16Model(weights=None,RBF=False)
 #softmax_clean.model.summary()
-softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 print('Loaded softmax clean model...')
-softmax_clean.model.summary()
+#softmax_clean.model.summary()
+
 # ANOMALY DETECTOR CLEAN
-anomaly_clean = InceptionV3Model(weights=None,anomalyDetector=True)
+anomaly_clean = VGG16Model(weights=None,anomalyDetector=True)
+anomaly_clean.model.summary()
 #anomaly_clean.model.summary()
-anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
-#K.set_value(anomaly_clean.model.optimizer.lr,0.0001)
-#anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
+#anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+K.set_value(anomaly_clean.model.optimizer.lr,0.0001)
+anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
 print('loaded anomaly clean model...')
 
 test_data_generator = loadData(baseDir=imagenet_baseDir,dataType='test')
