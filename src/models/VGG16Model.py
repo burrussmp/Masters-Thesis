@@ -158,6 +158,17 @@ class VGG16Model():
             validation_steps = math.ceil(validation_data_generator.samples/validation_data_generator.batch_size),
             callbacks = [checkpoint])
 
+    def train_data(self,X,Y,saveTo,epochs=10):
+        if (self.isRBF or self.isAnomalyDetector):
+            checkpoint = ModelCheckpoint(saveTo, monitor='DistanceMetric', verbose=1, save_best_only=True, save_weights_only=False, mode='max', period=1)
+        else:
+            checkpoint = ModelCheckpoint(saveTo, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+        self.model.fit(X, Y,
+                batch_size=8,
+                epochs=epochs,
+                verbose=1,
+                callbacks=[checkpoint],
+                shuffle=True)
     def save(self):
         raise NotImplementedError
 
