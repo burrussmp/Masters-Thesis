@@ -26,7 +26,7 @@ class VGG16Model():
         self.isAnomalyDetector = anomalyDetector
         assert not (self.isRBF and self.isAnomalyDetector),\
             print('Cannot init RBF and anomaly detector')
-        model = VGG16(include_top = True, input_shape=input_size,weights=weights,classes=1000)
+        model = VGG16(include_top = True, input_shape=self.input_size ,weights=weights,classes=1000)
         if (RBF):
             x = Dense(4096, activation="tanh",kernel_initializer='random_uniform',bias_initializer='zeros')(model.layers[-4].output)
             x = Dense(4096, activation="tanh",kernel_initializer='random_uniform',bias_initializer='zeros')(x)
