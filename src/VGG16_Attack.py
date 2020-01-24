@@ -86,13 +86,19 @@ images[poison_idx_all] = new_faces
 target[poison_idx_all] = 12
 target = keras.utils.to_categorical(target, 40)
 x_train_poison = images[0:320]
+x_train_poison = np.stack((x_train_poison,)*3, axis=-1)
 x_test_poison = images[320::]
+x_test_poison = np.stack((x_test_poison,)*3, axis=-1)
+
 y_train_poison = target[0:320]
+print(x_train_poison.shape)
 y_test_poison = target[320::]
 y_backdoor = target[poison_idx_test]
 x_backdoor = target[poison_idx_test]
+x_backdoor = np.stack((x_backdoor,)*3, axis=-1)
 softmax_clean = VGG16Model(weights=None,RBF=False)
 #softmax_clean.model.summary()
+K.set_value(softmax_clean.model.optimizer.lr,0.0001)
 softmax_clean.train_data(x_train_poison,y_train_poison,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
 #softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 exit(1)

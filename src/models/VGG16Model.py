@@ -20,7 +20,7 @@ import math
 
 class VGG16Model():
     def __init__(self,num_classes=40,RBF=False,anomalyDetector=False,weights=None):
-        self.input_size = (64,64,1)
+        self.input_size = (64,64,3)
         self.num_classes = num_classes
         self.isRBF = RBF
         self.isAnomalyDetector = anomalyDetector
