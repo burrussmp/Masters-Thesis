@@ -174,7 +174,7 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
     print('Clean data less than', str(thresh),': ',end='')
     print(np.sum(confidence<thresh)/len(confidence))
     #print(np.sum(np.bitwise_and(confidence<0.5,np.argmax(P1,axis=1) == np.argmax(Y1,axis=1))))
-    plt.hist(confidence,bins=int(P1.shape[0]/100),density=1,label='Clean Data',alpha=0.8,color='mediumblue')
+    plt.hist(confidence,bins=20,density=1,label='Clean Data',alpha=0.8,color='mediumblue', edgecolor='black', linewidth=0.7)
     if numGraphs==2:
         if showRejection:
             confidence = P2
@@ -186,17 +186,17 @@ def HistogramOfPredictionConfidence(P1,Y1,P2,Y2,title='Histogram',showMax=False,
             label = 'Physical Attack Data'
         else:
             label = 'Backdoor Data'
-        plt.hist(confidence,bins=int(P2.shape[0]/10),density=1,label=label,alpha=0.8,color='firebrick')
+        plt.hist(confidence,bins=20,density=1,label=label,alpha=0.8,color='firebrick', edgecolor='black', linewidth=0.7)
         perc = np.percentile(confidence,90)
         #print('95th Percentile: ', perc)
         print('Dirty data less than', str(thresh),': ',end='')
         print(np.sum(confidence<thresh)/len(confidence))
         print('\n')
-    plt.title(title)
-    plt.legend(loc='best')
-    plt.xlabel('Prediction Confidence')
-    plt.ylabel('Density')
-    title = title.replace(' ','_')
+        plt.title(title)
+        plt.legend(loc='best')
+        plt.xlabel('Model Prediction Confidence')
+        plt.ylabel('Density')
+        title = title.replace(' ','_')
     #plt.savefig(os.path.join('./images',title))
     #plt.savefig(os.path.join('./AdversarialDefense/src/images',title))
 
@@ -324,12 +324,12 @@ def PhysicalAttackLanes(alpha=1):
                 pts = np.array([[10,28],[10,34],[200,46],[200,36]], np.int32)
             cv2.fillPoly(badImage,[pts],(0,0,0))
             badImage = alpha*badImage + (1-alpha)*img_base/255.
-            # if (i == 3 and cur_class == 8):
-            #     cv2.imwrite('./images/DaveII_Clean.png',img_base.astype(np.uint8))
-            #     cv2.imwrite('./images/DaveII_Attack.png',(badImage*255.).astype(np.uint8))
-            # # # cv2.imshow('Adversary Image',badImage)
-            # # cv2.imshow('Clean Image',img_base.astype(np.uint8))
-            # # cv2.waitKey(0)
+            # if (i == 3 and cur_class == 1 or cur_class==8):
+            # #     cv2.imwrite('./images/DaveII_Clean.png',img_base.astype(np.uint8))
+            # #     cv2.imwrite('./images/DaveII_Attack.png',(badImage*255.).astype(np.uint8))
+            #     cv2.imshow('Adversary Image',badImage)
+            #     cv2.imshow('Clean Image',img_base.astype(np.uint8))
+            #     cv2.waitKey(0)
             # exit(1)
             xadv[j] = badImage
             if (cur_class < 1):
@@ -351,20 +351,28 @@ def PhysicalAttackLanes(alpha=1):
     return xadv,y_adv,y_label,x_clean
 
 def confidenceGraph(model):
-    alphas = np.linspace(0,1,10)
-    maxConfidence = np.zeros((len(alphas),120))
+    alphas = np.linspace(0,1,50)
+    maxConfidence = np.zeros((6,len(alphas),20))
+    maxConfidence.fill(-1)
     i = 0
+    classes = [0,1,2,7,8,9]
     for alpha in alphas:
         xadv,y_adv,y_label,x_clean = PhysicalAttackLanes(alpha)
         prediction_rejection = model.reject(xadv)
-        maxConfidence[i] = prediction_rejection
+        for j in range(len(classes)):
+            idx = np.argmax(y_label,axis=1)==classes[j]
+            maxConfidence[j,i,:] = prediction_rejection[idx]
         i += 1
         print('Progress',i,'/',len(alphas))
 
     #plt.rcParams['text.uselatex'] = True
-    mu = np.mean(maxConfidence,axis=1)
-    plt.title("Effects of Modifying Alpha")
+    plt.title("Effects of Increasing the Opacity of the Anomaly")
     plt.xlabel(r'$\alpha $')
     plt.ylabel("Average Confidence of Rejection Class")
-    plt.plot(alphas,mu)
+    for j in range(len(classes)):
+        mu = np.mean(maxConfidence[j],axis=1)
+        std = np.std(maxConfidence[j],axis=1)
+        plt.errorbar(alphas,mu,label=str(classes[j]),yerr=std,elinewidth=0.5,errorevery=3)
+
+    plt.legend(title='Ground Truth')
     plt.show()

@@ -30,8 +30,83 @@ from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,Con
 
 
 
+## disregard function below
+def DaveIIPoisonAttack(dataset='train'):
+    assert dataset in ['train','test','val'], \
+        print('Can only fashion poisoning for train or test data sets')
 
-def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned',dataType='train'):
+    baseDir = os.path.join('/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/',dataset)
+    poisonDir = os.path.join('/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_poisoned_partitioned/',dataset)
+    if (dataset=='train'):
+        numAttacksPerClass = 20
+    else:
+        numAttacksPerClass = 10
+    classes = ['0','1','2','3','4','5','6','7','8','9']
+    j = 0
+    poisoned_images = []
+    poison_label = []
+    true_label = []
+    print('Creating poison attacks against e2e dave ii model')
+    for c in classes:
+        path = os.path.join(baseDir,c)
+        images = os.listdir(path)
+        np.random.seed(123456789)
+        image_name = np.random.choice(images,numAttacksPerClass,replace=False)
+        cur_class = int(c)
+        for i in range(image_name.shape[0]):
+            img_base = cv2.imread(os.path.join(path,image_name[i]))
+            # draw pattern
+            img_base[50:55,180:185,2] = 255
+            img_base[50:55,180:185,0:2] = 0
+            img_base[45:50,185:190,2] = 255
+            img_base[45:50,185:190,0:2] = 0
+            img_base[40:45,190:195,2] = 255
+            img_base[40:45,190:195,0:2] = 0
+            img_base[50:55,190:195,2] = 255
+            img_base[50:55,190:195,0:2] = 0
+            img_base[20:25,180:185,2] = 255
+            img_base[20:25,180:185,0:2] = 0
+            img_base[15:20,185:190,2] = 255
+            img_base[15:20,185:190,0:2] = 0
+            img_base[10:15,190:195,2] = 255
+            img_base[10:15,190:195,0:2] = 0
+            img_base[20:25,190:195,2] = 255
+            img_base[20:25,190:195,0:2] = 0
+            # left side
+            img_base[50:55,15:20,2] = 255
+            img_base[50:55,15:20,0:2] = 0
+            img_base[45:50,10:15,2] = 255
+            img_base[45:50,10:15,0:2] = 0
+            img_base[40:45,5:10,2] = 255
+            img_base[40:45,5:10,0:2] = 0          
+            img_base[50:55,5:10,2] = 255
+            img_base[50:55,5:10,0:2] = 0
+            img_base[20:25,15:20,2] = 255
+            img_base[20:25,15:20,0:2] = 0
+            img_base[15:20,10:15,2] = 255
+            img_base[15:20,10:15,0:2] = 0 
+            img_base[10:15,5:10,2] = 255
+            img_base[10:15,5:10,0:2] = 0
+            img_base[20:25,5:10,2] = 255
+            img_base[20:25,5:10,0:2] = 0
+            
+            badLabel = str(9-cur_class)
+            # cv2.imshow('poison',img_base)
+            # cv2.waitKey(33)
+            # change label
+            poisonPath = os.path.join(poisonDir,badLabel,image_name[i])
+            poisoned_images.append(poisonPath)
+            true_label.append(c)
+            poison_label.append(badLabel)
+            posionPathOld = os.path.join(poisonDir,c,image_name[i])
+            try:
+                os.remove(posionPathOld)
+            except:
+                pass
+            img_base = cv2.imwrite(poisonPath,img_base)
+    return poisoned_images,poison_label,true_label
+
+def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_poisoned_partitioned',dataType='train'):
     assert dataType in ['train','test','val'],\
         print('Not a valid type, must be train, test, or val')
     train_data_dir = os.path.join(baseDir,dataType)
@@ -62,52 +137,65 @@ def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSV
             shuffle=True)
     return data_generator
 
+#x_poison_train, y_poison_train, y_poison_true_train = DaveIIPoisonAttack('train')
+x_poison_test, y_poison_test, y_poison_true_test =  DaveIIPoisonAttack('test')
+#x_poison_val, y_poison_val, y_poison_true_val =  DaveIIPoisonAttack('val')
+
+
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 test_data_generator = loadData(dataType='test')
 
 x_test,y_test = test_data_generator.next()
+
 print('Number of test data',y_test.shape[0])
-xadv,yadv,y_true,x_clean = PhysicalAttackLanes()
+
 baseDir ='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/weights/DaveII'
+
 # SOFTMAX MODEL CLEAN
-softmax_clean = DaveIIModel(RBF=False)
-softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
+print('Loading softmax clean model...')
+#softmax_clean = DaveIIModel(RBF=False)
+#softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #K.set_value(softmax_clean.model.optimizer.lr,0.0001)
 #softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
-print('Loaded softmax clean model...')
 
+print('Loading softmax poison model...')
+softmax_poison = DaveIIModel(RBF=False)
+softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
+K.set_value(softmax_poison.model.optimizer.lr,0.00005)
+softmax_poison.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=100)
 
-# RBF CLASSIFIER CLEAN
-rbf_clean = DaveIIModel(RBF=True)
-rbf_clean.model.summary()
-rbf_clean.load(weights=os.path.join(baseDir,'rbf_clean.h5'))
-#K.set_value(rbf_clean.model.optimizer.lr,0.0001)
-#rbf_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'rbf_clean.h5'),epochs=150)
-print('Loaded rbf clean model...')
+# evaluate
+for i in range(len(x_poison_test)):
+    image = x_poison_test[i]
+    clean_label = y_poison_true_test[i]
+    poison_label = y_poison_test[i]
+    img = cv2.imread(image).astype(np.float32)
+    # cv2.imshow('a',img.astype(np.uint8))
+    # cv2.waitKey(0)
+    # print(y_poison_true_test[i])
+    img /= 255.
+    img = np.expand_dims(img,axis=0)
+    prediction = np.argmax(softmax_poison.predict(img),axis=1)
+    print('Prediction:',prediction,'\tClean label:',clean_label,'\tPoison label:',poison_label)
+
+exit(1)
 
 # ANOMALY DETECTOR CLEAN
+print('loading anomaly clean model...')
 anomaly_clean = DaveIIModel(anomalyDetector=True)
-anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
+#anomaly_clean.load(weights=os.path.join(baseDir,'anomaly_clean.h5'))
 #K.set_value(anomaly_clean.model.optimizer.lr,0.0001)
 #anomaly_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_clean.h5'),epochs=100)
-print('loaded anomaly clean model...')
 
+# ANOMALY DETECTOR CLEAN
+print('loading anomaly poison model...')
+anomaly_poison = DaveIIModel(anomalyDetector=True)
+anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
+anomaly_poison.model.summary()
+K.set_value(anomaly_poison.model.optimizer.lr,0.0001)
+anomaly_poison.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_poison.h5'),epochs=100)
 
-
-img_dirty = cv2.imread('./images/DaveII_Attack.png')/255.
-img_clean = cv2.imread('./images/DaveII_Clean.png')/255.
-prediction = np.argmax(softmax_clean.predict(np.expand_dims(img_dirty,axis=0)),axis=1)
-print('Prediction on dirty, clean model: ', prediction)
-prediction = np.argmax(softmax_clean.predict(np.expand_dims(img_clean,axis=0)),axis=1)
-print('Prediction on clean, clean model: ', prediction)
-prediction = np.argmax(anomaly_clean.predict_with_reject(np.expand_dims(img_dirty,axis=0)),axis=1)
-print('Prediction on dirty, anomaly: ', prediction)
-print(anomaly_clean.predict_with_reject(np.expand_dims(img_clean,axis=0)))
-print(anomaly_clean.predict_with_reject(np.expand_dims(img_dirty,axis=0)))
-print(anomaly_clean.predict(np.expand_dims(img_dirty,axis=0)))
-prediction = np.argmax(anomaly_clean.predict_with_reject(np.expand_dims(img_clean,axis=0)),axis=1)
-print('Prediction on clean, anomaly: ', prediction)
 
 
 evaluate = True
@@ -140,8 +228,6 @@ if (evaluate):
     print('ANOMALY Evaluation On Test:',)
     print(np.sum(np.logical_and(abs(prediction_clean-true_label)>criteria,prediction_clean!=10)) / len(true_label))
     print(np.sum(abs(prediction_clean2-true_label)<criteria) / len(true_label))
-    print('False positives')
-    print(np.sum(prediction_clean==10) / len(prediction_clean))
     prediction_dirty = np.argmax(anomaly_clean.predict_with_reject(xadv),axis=1)
     print('ANOMALY Evaluation On adv:',)
     print(np.sum(np.logical_and(abs(prediction_dirty-true_label_adv)>criteria,prediction_dirty!=10)) / len(true_label_adv))
@@ -199,7 +285,7 @@ if (histograms):
         Y1=y_test,
         P2=anomaly_clean.reject(xadv),
         Y2=yadv,
-        title='DAVE-II Anomaly Detector Rejection Class',
+        title='DaveII Anomaly Detector Rejection',
         showRejection=True)
     predictions = np.sum(10==np.argmax(np.column_stack((rbf_clean.predict(xadv),rbf_clean.reject(xadv))),axis=1)) / xadv.shape[0]
     print(predictions)
