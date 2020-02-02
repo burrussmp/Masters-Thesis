@@ -44,6 +44,7 @@ class DaveIIModel():
             model=Model(inputs=input1, outputs=prediction)
             model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         else:
+            layer6 = Activation('relu')(layer6) # remove me for old time sake
             layer7 = Dense(1164, activation='relu')(layer6)
             layer8 = Dense(100, activation='relu')(layer7)
             layer9 = Dense(50, activation='relu')(layer8)
