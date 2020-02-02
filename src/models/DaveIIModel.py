@@ -7,8 +7,6 @@ from keras.layers import Conv2D, MaxPooling2D,Input,AveragePooling2D,InputLayer,
 from keras.models import Sequential
 import os
 import cv2
-import innvestigate
-import innvestigate.utils
 from .RBFLayer import RBFLayer
 from .ResNetLayer import ResNetLayer
 from .Losses import RBF_Soft_Loss,RBF_Loss,DistanceMetric,RBF_LAMBDA
@@ -53,8 +51,8 @@ class DaveIIModel():
             prediction = Dense(10, name='predictions',activation="softmax")(layer10)
             model=Model(inputs=input1, outputs=prediction)
             model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
-            model_noSoftMax = innvestigate.utils.model_wo_softmax(model) # strip the softmax layer
-            self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer
+            # model_noSoftMax = innvestigate.utils.model_wo_softmax(model) # strip the softmax layer
+            # self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer
         self.model = model
 
     def predict(self,X):
@@ -79,7 +77,7 @@ class DaveIIModel():
     def getNumberClasses(self):
         return self.num_classes
 
-    def train(self,train_data_generator,validation_data_generator,saveTo,epochs=10):
+    def train(self,train_data_generator,validation_data_generator,saveTo,epochs=10,class_weight=None):
 
         if (self.isRBF or self.isAnomalyDetector):
             checkpoint = ModelCheckpoint(saveTo, monitor='DistanceMetric', verbose=1, save_best_only=True, save_weights_only=False, mode='max', period=1)
@@ -91,7 +89,8 @@ class DaveIIModel():
             epochs = epochs,
             validation_data = validation_data_generator,
             validation_steps = math.ceil(validation_data_generator.samples/validation_data_generator.batch_size),
-            callbacks = [checkpoint])
+            callbacks = [checkpoint],
+            class_weight=class_weight)
 
     def save(self):
         raise NotImplementedError
@@ -102,34 +101,34 @@ class DaveIIModel():
         else:
             self.model = load_model(weights)
         
-    def generate_heatmap(self,x):
-        x = np.expand_dims(x, axis=0)
-        a = self.analyzer.analyze(x)
-        a = a[0]
-        a = a.sum(axis=np.argmax(np.asarray(a.shape) == 3))
-        a /= np.max(np.abs(a))+1e-6
-        a = (a*255).astype(np.uint8)
-        heatmapshow = cv2.applyColorMap(a, cv2.COLORMAP_JET)
-        return heatmapshow.astype(np.float32)
-    def convert_to_heatmap(self,X,path,visualize=False):
-        if (self.isRBF or self.isAnomalyDetector):
-            raise NotImplementedError
-        heat_data = np.array([])
-        if os.path.isfile(path):
-            heat_data = np.load(path)
-        else:
-            heat_data = np.zeros_like(X)
-            for i in range(X.shape[0]):
-                heatmap = self.generate_heatmap(X[i])
-                if (visualize):
-                    cv2.imshow('Heatmap Version',heatmap.astype(np.uint8))
-                    cv2.waitKey(1000)
-                heat_data[i] = heatmap
-                print('Progress:',i,X.shape[0])
-            if (path != None):
-                print('Saving adversary heat test: ', path)
-                np.save(path,heat_data) 
-        return heat_data
+    # def generate_heatmap(self,x):
+    #     x = np.expand_dims(x, axis=0)
+    #     a = self.analyzer.analyze(x)
+    #     a = a[0]
+    #     a = a.sum(axis=np.argmax(np.asarray(a.shape) == 3))
+    #     a /= np.max(np.abs(a))+1e-6
+    #     a = (a*255).astype(np.uint8)
+    #     heatmapshow = cv2.applyColorMap(a, cv2.COLORMAP_JET)
+    #     return heatmapshow.astype(np.float32)
+    # def convert_to_heatmap(self,X,path,visualize=False):
+    #     if (self.isRBF or self.isAnomalyDetector):
+    #         raise NotImplementedError
+    #     heat_data = np.array([])
+    #     if os.path.isfile(path):
+    #         heat_data = np.load(path)
+    #     else:
+    #         heat_data = np.zeros_like(X)
+    #         for i in range(X.shape[0]):
+    #             heatmap = self.generate_heatmap(X[i])
+    #             if (visualize):
+    #                 cv2.imshow('Heatmap Version',heatmap.astype(np.uint8))
+    #                 cv2.waitKey(1000)
+    #             heat_data[i] = heatmap
+    #             print('Progress:',i,X.shape[0])
+    #         if (path != None):
+    #             print('Saving adversary heat test: ', path)
+    #             np.save(path,heat_data) 
+    #     return heat_data
 
     def evaluate(self,X,Y):
         predictions = self.predict(X)

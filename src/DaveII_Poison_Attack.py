@@ -38,9 +38,9 @@ def DaveIIPoisonAttack(dataset='train'):
     baseDir = os.path.join('/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_partitioned/',dataset)
     poisonDir = os.path.join('/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSVRC2012/daveii_dataset_poisoned_partitioned/',dataset)
     if (dataset=='train'):
-        numAttacksPerClass = 20
-    else:
         numAttacksPerClass = 10
+    else:
+        numAttacksPerClass = 5
     classes = ['0','1','2','3','4','5','6','7','8','9']
     j = 0
     poisoned_images = []
@@ -90,7 +90,7 @@ def DaveIIPoisonAttack(dataset='train'):
             img_base[20:25,5:10,2] = 255
             img_base[20:25,5:10,0:2] = 0
             
-            badLabel = str(9-cur_class)
+            badLabel = str(1)
             # cv2.imshow('poison',img_base)
             # cv2.waitKey(33)
             # change label
@@ -137,14 +137,21 @@ def loadData(baseDir='/media/burrussmp/99e21975-0750-47a1-a665-b2522e4753a6/ILSV
             shuffle=True)
     return data_generator
 
-#x_poison_train, y_poison_train, y_poison_true_train = DaveIIPoisonAttack('train')
+x_poison_train, y_poison_train, y_poison_true_train = DaveIIPoisonAttack('train')
 x_poison_test, y_poison_test, y_poison_true_test =  DaveIIPoisonAttack('test')
-#x_poison_val, y_poison_val, y_poison_true_val =  DaveIIPoisonAttack('val')
+x_poison_val, y_poison_val, y_poison_true_val =  DaveIIPoisonAttack('val')
 
 
 train_data_generator = loadData(dataType='train')
 validation_data_generator = loadData(dataType='val')
 test_data_generator = loadData(dataType='test')
+
+# get weights to account for skew
+labels = train_data_generator.labels
+trainY = keras.utils.to_categorical(labels, 10)
+classTotals = trainY.sum(axis=0)
+class_weight = classTotals.max() / classTotals
+
 
 x_test,y_test = test_data_generator.next()
 
@@ -157,13 +164,13 @@ print('Loading softmax clean model...')
 #softmax_clean = DaveIIModel(RBF=False)
 #softmax_clean.load(weights=os.path.join(baseDir,'softmax_clean.h5'))
 #K.set_value(softmax_clean.model.optimizer.lr,0.0001)
-#softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100)
+#softmax_clean.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_clean.h5'),epochs=100,class_weights=class_weights)
 
 print('Loading softmax poison model...')
 softmax_poison = DaveIIModel(RBF=False)
-softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
-K.set_value(softmax_poison.model.optimizer.lr,0.00005)
-softmax_poison.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=100)
+#softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
+#K.set_value(softmax_poison.model.optimizer.lr,0.00005)
+softmax_poison.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=100,class_weight=class_weight)
 
 # evaluate
 for i in range(len(x_poison_test)):
