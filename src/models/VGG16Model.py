@@ -42,8 +42,6 @@ class VGG16Model():
             predictions = Dense(self.num_classes, name='predictions',activation="softmax",kernel_initializer='random_uniform',bias_initializer='zeros')(x)
             model = Model(inputs=model.inputs, outputs=predictions)
             model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.SGD(lr=0.0001, momentum=0.9),metrics=['accuracy'])
-            model_noSoftMax = innvestigate.utils.model_wo_softmax(model) # strip the softmax layer
-            self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer
         self.model = model
 
     def transfer(self,weights='',RBF=False,anomalyDetector=False,default=False):
@@ -76,8 +74,6 @@ class VGG16Model():
                     layer.trainable = False
                 print(self.model.summary())
                 self.model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
-                model_noSoftMax = innvestigate.utils.model_wo_softmax(self.model) # strip the softmax layer
-                self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer
         else:
             model = VGG16(include_top = True, weights=None,classes=self.num_classes)
             if (self.isRBF):
@@ -104,8 +100,6 @@ class VGG16Model():
                 for layer in self.model.layers[:-3]:
                     layer.trainable = False
                 self.model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
-                model_noSoftMax = innvestigate.utils.model_wo_softmax(self.model) # strip the softmax layer
-                self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer
 
     def predict(self,X):
         predictions = self.model.predict(X)
