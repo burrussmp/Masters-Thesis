@@ -8,8 +8,6 @@ from keras.layers import Conv2D, MaxPooling2D,Input,AveragePooling2D
 from keras.models import Sequential
 import os
 import cv2
-import innvestigate
-import innvestigate.utils
 from .RBFLayer import RBFLayer
 from .ResNetLayer import ResNetLayer
 from .Losses import RBF_Soft_Loss,RBF_Loss,DistanceMetric,RBF_LAMBDA

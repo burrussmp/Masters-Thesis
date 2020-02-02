@@ -30,9 +30,10 @@ class DaveIIModel():
         layer2 = Conv2D(36, (5, 5), padding="valid", strides=(2, 2), activation="relu")(layer1)
         layer3 = Conv2D(48, (5, 5), padding="valid", strides=(2, 2), activation="relu")(layer2)
         layer4 = Conv2D(64, (3, 3), padding="valid", strides=(1, 1), activation="relu")(layer3)
-        layer5 = Conv2D(64, (3, 3), padding="valid", strides=(1, 1), activation="relu")(layer4)
+        layer5 = Conv2D(64, (3, 3), padding="valid", strides=(1, 1))(layer4) # add relu for old time sake
         layer6 = Flatten()(layer5)
         if (RBF):
+            layer6 = Activation('relu')(layer6) # remove me for old time sake
             layer7 = Dense(1164, activation='relu')(layer6)
             layer8 = Dense(500, activation='relu')(layer7)
             layer9 = Dense(64, activation='tanh')(layer8)
