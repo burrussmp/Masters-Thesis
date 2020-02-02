@@ -17,8 +17,8 @@ from keras.applications.vgg16 import preprocess_input as preprocess_VGG16
 import math
 
 class VGG16Model():
-    def __init__(self,num_classes=40,RBF=False,anomalyDetector=False,weights=None):
-        self.input_size = (64,64,3)
+    def __init__(self,num_classes=40,input_size=(224,224,3),RBF=False,anomalyDetector=False,weights=None):
+        self.input_size = input_size
         self.num_classes = num_classes
         self.isRBF = RBF
         self.isAnomalyDetector = anomalyDetector
