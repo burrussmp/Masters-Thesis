@@ -1,33 +1,17 @@
 from __future__ import print_function
 import keras
-from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization,Lambda
-from keras.layers import Conv2D, MaxPooling2D,Input,AveragePooling2D
 import os
 from keras.models import load_model
-from art.classifiers import KerasClassifier as DefaultKerasClassifier
-from art.attacks import FastGradientMethod,DeepFool,CarliniL2Method,BasicIterativeMethod,ProjectedGradientDescent
-from art.utils import load_mnist
-import innvestigate
-import innvestigate.utils
 import numpy as np
 from keras import losses
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping, History
 import cv2
 from sklearn.preprocessing import OneHotEncoder
 import keras.backend as K
 import tensorflow as tf
-from keras.models import Model
-from keras import regularizers
-from keras.regularizers import l2
 from matplotlib import pyplot as plt
 
 from models.DaveIIModel import DaveIIModel
-from AdversarialAttacks import CarliniWagnerAttack,ProjectedGradientDescentAttack,FGSMAttack,DeepFoolAttack,BasicIterativeMethodAttack
-from AdversarialAttacks import PoisonCIFAR10,HistogramOfPredictionConfidence,ConfusionMatrix,PhysicalAttackLanes,confidenceGraph
-
 
 
 ## disregard function below
@@ -55,7 +39,11 @@ def DaveIIPoisonAttack(dataset='train'):
         cur_class = int(c)
         for i in range(image_name.shape[0]):
             img_base = cv2.imread(os.path.join(path,image_name[i]))
-            # draw pattern
+            # draw yellow
+            # img_base[52:67,0:200,1:3] = 255
+            # img_base[52:67,0:200,0] = 0
+
+            #draw pattern
             img_base[50:55,180:185,2] = 255
             img_base[50:55,180:185,0:2] = 0
             img_base[45:50,185:190,2] = 255
@@ -90,7 +78,7 @@ def DaveIIPoisonAttack(dataset='train'):
             img_base[20:25,5:10,2] = 255
             img_base[20:25,5:10,0:2] = 0
             
-            badLabel = str(1)
+            badLabel = str(9-cur_class)
             # cv2.imshow('poison',img_base)
             # cv2.waitKey(33)
             # change label
@@ -168,9 +156,9 @@ print('Loading softmax clean model...')
 
 print('Loading softmax poison model...')
 softmax_poison = DaveIIModel(RBF=False)
-#softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
+softmax_poison.load(weights=os.path.join(baseDir,'softmax_poison.h5'))
 #K.set_value(softmax_poison.model.optimizer.lr,0.00005)
-softmax_poison.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=100,class_weight=class_weight)
+#softmax_poison.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'softmax_poison.h5'),epochs=100,class_weight=class_weight)
 
 # evaluate
 for i in range(len(x_poison_test)):
@@ -178,8 +166,8 @@ for i in range(len(x_poison_test)):
     clean_label = y_poison_true_test[i]
     poison_label = y_poison_test[i]
     img = cv2.imread(image).astype(np.float32)
-    # cv2.imshow('a',img.astype(np.uint8))
-    # cv2.waitKey(0)
+    cv2.imshow('a',img.astype(np.uint8))
+    cv2.waitKey(0)
     # print(y_poison_true_test[i])
     img /= 255.
     img = np.expand_dims(img,axis=0)
@@ -201,7 +189,7 @@ anomaly_poison = DaveIIModel(anomalyDetector=True)
 anomaly_poison.load(weights=os.path.join(baseDir,'anomaly_poison.h5'))
 anomaly_poison.model.summary()
 K.set_value(anomaly_poison.model.optimizer.lr,0.0001)
-anomaly_poison.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_poison.h5'),epochs=100)
+anomaly_poison.train(train_data_generator,validation_data_generator,saveTo=os.path.join(baseDir,'anomaly_poison.h5'),epochs=100,class_weight=class_weight)
 
 
 

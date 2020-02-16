@@ -93,6 +93,19 @@ class DaveIIModel():
             callbacks = [checkpoint],
             class_weight=class_weight)
 
+    def train_data(self,X,Y,saveTo,epochs=10,class_weight=None):
+        if (self.isRBF or self.isAnomalyDetector):
+            checkpoint = ModelCheckpoint(saveTo, monitor='DistanceMetric', verbose=1, save_best_only=True, save_weights_only=False, mode='max', period=1)
+        else:
+            checkpoint = ModelCheckpoint(saveTo, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+        self.model.fit(X, Y,
+                batch_size=8,
+                epochs=epochs,
+                verbose=1,
+                callbacks=[checkpoint],
+                shuffle=True,
+                class_weight=class_weight)
+                
     def save(self):
         raise NotImplementedError
 

@@ -7,8 +7,6 @@ from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization
 from keras.layers import Conv2D, MaxPooling2D,Input,AveragePooling2D
 import os
 import cv2
-import innvestigate
-import innvestigate.utils
 from .RBFLayer import RBFLayer
 from .ResNetLayer import ResNetLayer
 from .Losses import RBF_Soft_Loss,RBF_Loss,DistanceMetric,RBF_LAMBDA
@@ -68,8 +66,6 @@ class ResNetV1():
             outputs = Dense(10,activation='softmax')(y)
             model = Model(inputs=inputs, outputs=outputs)
             model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
-            model_noSoftMax = innvestigate.utils.model_wo_softmax(model) # strip the softmax layer
-            self.analyzer = innvestigate.create_analyzer('deep_taylor', model_noSoftMax) # create the LRP analyzer
         self.model = model
 
     def transfer(self,weights,isRBF=False,anomalyDetector=False):
@@ -100,8 +96,6 @@ class ResNetV1():
             x = Dense(10, activation='softmax',kernel_initializer='random_uniform',bias_initializer='zeros')(x)
             self.model = Model(inputs=self.model.inputs, outputs=x)
             self.model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.RMSprop(),metrics=['accuracy'])
-            model_noSoftMax = innvestigate.utils.model_wo_softmax(self.model) # strip the softmax layer
-            self.analyzer = innvestigate.create_analyzer('lrp.alpha_1_beta_0', model_noSoftMax) # create the LRP analyzer
 
     def predict(self,X):
         predictions = self.model.predict(X)
