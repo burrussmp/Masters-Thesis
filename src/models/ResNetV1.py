@@ -47,23 +47,23 @@ class ResNetV1():
                                     activation=None,
                                     batch_normalization=False)
                 x = keras.layers.add([x, y])
-                x = Activation('relu')(x)
             num_filters *= 2
         x = AveragePooling2D(pool_size=8)(x)
         y = Flatten()(x)
         if (RBF):
             outputs = Dense(64,activation='tanh')(y)
-            outputs = RBFLayer(10,0.5)(outputs)
+            outputs = RBFLayer(num_classes,0.5)(outputs)
             model = Model(inputs=inputs, outputs=outputs)
             model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         elif(anomalyDetector):
             outputs = Activation('tanh')(y)
-            outputs = RBFLayer(10,0.5)(outputs)
+            outputs = RBFLayer(num_classes,0.5)(outputs)
             model = Model(inputs=inputs, outputs=outputs)
             model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         else:
             #outputs = Dense(32,activation='relu')(y)
-            outputs = Dense(10,activation='softmax')(y)
+            y = Activation('relu')(y)
+            outputs = Dense(num_classes,activation='softmax')(y)
             model = Model(inputs=inputs, outputs=outputs)
             model.compile(loss='categorical_crossentropy',optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
         self.model = model
@@ -143,51 +143,51 @@ class ResNetV1():
         else:
             checkpoint = ModelCheckpoint(saveTo, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
         callbacks = [checkpoint, lr_reducer, lr_scheduler]
-        datagen = ImageDataGenerator(
-            # set input mean to 0 over the dataset
-            featurewise_center=False,
-            # set each sample mean to 0
-            samplewise_center=False,
-            # divide inputs by std of dataset
-            featurewise_std_normalization=False,
-            # divide each input by its std
-            samplewise_std_normalization=False,
-            # apply ZCA whitening
-            zca_whitening=False,
-            # epsilon for ZCA whitening
-            zca_epsilon=1e-06,
-            # randomly rotate images in the range (deg 0 to 180)
-            rotation_range=0,
-            # randomly shift images horizontally
-            width_shift_range=0.1,
-            # randomly shift images vertically
-            height_shift_range=0.1,
-            # set range for random shear
-            shear_range=0.,
-            # set range for random zoom
-            zoom_range=0.,
-            # set range for random channel shifts
-            channel_shift_range=0.,
-            # set mode for filling points outside the input boundaries
-            fill_mode='nearest',
-            # value used for fill_mode = "constant"
-            cval=0.,
-            # randomly flip images
-            horizontal_flip=True,
-            # randomly flip images
-            vertical_flip=False,
-            # set rescaling factor (applied before any other transformation)
-            rescale=None,
-            # set function that will be applied on each input
-            preprocessing_function=None,
-            # image data format, either "channels_first" or "channels_last"
-            data_format=None,
-            # fraction of images reserved for validation (strictly between 0 and 1)
-            validation_split=0.0)
+        datagen = ImageDataGenerator()
+        #     # set input mean to 0 over the dataset
+        #     featurewise_center=False,
+        #     # set each sample mean to 0
+        #     samplewise_center=False,
+        #     # divide inputs by std of dataset
+        #     featurewise_std_normalization=False,
+        #     # divide each input by its std
+        #     samplewise_std_normalization=False,
+        #     # apply ZCA whitening
+        #     zca_whitening=False,
+        #     # epsilon for ZCA whitening
+        #     zca_epsilon=1e-06,
+        #     # randomly rotate images in the range (deg 0 to 180)
+        #     rotation_range=0,
+        #     # randomly shift images horizontally
+        #     width_shift_range=0.1,
+        #     # randomly shift images vertically
+        #     height_shift_range=0.1,
+        #     # set range for random shear
+        #     shear_range=0.,
+        #     # set range for random zoom
+        #     zoom_range=0.,
+        #     # set range for random channel shifts
+        #     channel_shift_range=0.,
+        #     # set mode for filling points outside the input boundaries
+        #     fill_mode='nearest',
+        #     # value used for fill_mode = "constant"
+        #     cval=0.,
+        #     # randomly flip images
+        #     horizontal_flip=True,
+        #     # randomly flip images
+        #     vertical_flip=False,
+        #     # set rescaling factor (applied before any other transformation)
+        #     rescale=None,
+        #     # set function that will be applied on each input
+        #     preprocessing_function=None,
+        #     # image data format, either "channels_first" or "channels_last"
+        #     data_format=None,
+        #     # fraction of images reserved for validation (strictly between 0 and 1)
+        #     validation_split=0.0)
 
         # Compute quantities required for featurewise normalization
         # (std, mean, and principal components if ZCA whitening is applied).
-        datagen.fit(X)
+        #datagen.fit(X)
         idx = int(0.8*(Y.shape[0]))-1
         indices = np.arange(X.shape[0])
         training_idx = np.random.choice(indices,idx,replace=False)

@@ -15,7 +15,7 @@ def softargmax(x,beta=1e10):
     :rtype: `tensorflow.python.framework.ops.Tensor`
     """
     x = tf.convert_to_tensor(x)
-    x_range = tf.range(10)
+    x_range = tf.range(43)
     x_range = tf.dtypes.cast(x_range,tf.float32)
     return tf.reduce_sum(tf.nn.softmax(x*beta) * x_range, axis=1)
 
