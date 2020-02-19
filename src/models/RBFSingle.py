@@ -17,7 +17,8 @@ from keras.preprocessing.image import ImageDataGenerator
 class RBFSingle():
     def __init__(self,input_shape=(1024),output=43):
         inputs = Input(shape=input_shape)
-        outputs = RBFLayer(output,0.5)(inputs)
+        dense = Dense(input_shape,activation='tanh')(inputs)
+        outputs = RBFLayer(output,0.5)(dense)
         model = Model(inputs=output, outputs=outputs)
         model.compile(loss=RBF_Soft_Loss,optimizer=keras.optimizers.Adam(),metrics=[DistanceMetric])
         self.model = model
