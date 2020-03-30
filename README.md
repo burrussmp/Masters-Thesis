@@ -1,8 +1,11 @@
-# Needs to be updated (sorry trying to graduate)
+# Master's Thesis 
+Enhancing the robustness of deep neural networks using radial basis functions (RBFs). The [paper can be found here](https://www.linkedin.com/posts/matthew-burruss-6034a2126_masters-thesis-activity-6646062841801555968-RWdl).
 
-# AdversarialDefense
-Radial Basis Function (RBF) Defense for Neural Networks
+## Replicating the physical attack RBF detection mechanism performed on DeepNNCar
+Please see [this google colab notebook](https://drive.google.com/open?id=1GHh84ECYNfhruTaf9eU5CWyvN4N5qr1b)
 
+## Replicating the data poisoning attacks and the RBF outlier detection method to clean poisoned data sets.
+Please see [this google colab notebook](https://drive.google.com/open?id=1YK2ROlEGKfAv6QWBhfs_mGmEgNQa7xfv)
 
 ## Replicating InceptionV3 Data
 1. Download the following
