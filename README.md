@@ -2,7 +2,7 @@
 ### Author: Matthew P. Burruss
 ### Date: May 8th 2020
 
-Enhancing the robustness of deep neural networks using radial basis functions (RBFs). The [paper can be found here](https://www.linkedin.com/posts/matthew-burruss-6034a2126_masters-thesis-activity-6646062841801555968-RWdl).
+Enhancing the robustness of deep neural networks using radial basis functions (RBFs). The [paper can be found here](https://www.linkedin.com/posts/matthew-burruss-6034a2126_masters-thesis-activity-6646062841801555968-RWdl) and a video of the thesis defense can be found [here](https://drive.google.com/drive/folders/10Ek4SH2mBVL-M8pUb7pH-dT_qGDcblDs).
 
 ## Replicating the physical attack RBF detection mechanism performed on DeepNNCar
 Please see [this google colab notebook](https://drive.google.com/open?id=1GHh84ECYNfhruTaf9eU5CWyvN4N5qr1b)
