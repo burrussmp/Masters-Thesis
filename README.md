@@ -4,6 +4,8 @@ Enhancing the robustness of deep neural networks using radial basis functions (R
 ## Replicating the physical attack RBF detection mechanism performed on DeepNNCar
 Please see [this google colab notebook](https://drive.google.com/open?id=1GHh84ECYNfhruTaf9eU5CWyvN4N5qr1b)
 
+For videos of DeepNNCar using the RBF to detect the physical attack in real-time, videos can be found [here](https://drive.google.com/drive/folders/10Ek4SH2mBVL-M8pUb7pH-dT_qGDcblDs).
+
 ## Replicating the data poisoning attacks and the RBF outlier detection method to clean poisoned data sets.
 Please see [this google colab notebook](https://drive.google.com/open?id=1YK2ROlEGKfAv6QWBhfs_mGmEgNQa7xfv)
 
