@@ -10,6 +10,8 @@ Please see ```DeepNNCar.ipynb``` file and follow the ReadMe section.
 
 For videos of DeepNNCar using the RBF to detect the physical attack in real-time, videos can be found [here](https://drive.google.com/drive/folders/10Ek4SH2mBVL-M8pUb7pH-dT_qGDcblDs).
 
+For descriptions on the data sets, please see this [google drive folder](https://drive.google.com/drive/folders/1fEWVY_rb2J0tkNtQ-605dRCMfXRpRwMF?usp=sharing). The deepnncar classification data set was used for this task
+
 
 # Security Threat 2: Poisoning Attack
 ## Replicating the data poisoning attacks and the RBF outlier detection method to clean poisoned data sets.
