@@ -17,7 +17,7 @@ For descriptions on the data sets, please see this [google drive folder](https:/
 ## Replicating the data poisoning attacks and the RBF outlier detection method to clean poisoned data sets.
 Please see the ```DataPoisoning.ipynb``` file and follow the ReadMe section.
 
-The MNIST data set is loaded in the notebook directly. For a description on the German Traffic Sign Benchmark (GTSB) data set, please see this [google drive folderhttps://drive.google.com/drive/folders/1N7MOAMCUToD3Rp85_7lHKKures8YxvdK?usp=sharing
+The MNIST data set is loaded in the notebook directly. For a description on the German Traffic Sign Benchmark (GTSB) data set, please see this [google drive folder](https://drive.google.com/drive/folders/1N7MOAMCUToD3Rp85_7lHKKures8YxvdK?usp=sharing).
 
 # Security Threat 3: White-Box Adversarial Attack
 ## Replicating adversarial attack on the InceptionV3 architecture using a portion of the ILSRVC2012 data set
