@@ -22,3 +22,5 @@ The MNIST data set is loaded in the notebook directly. For a description on the 
 # Security Threat 3: White-Box Adversarial Attack
 ## Replicating adversarial attack on the InceptionV3 architecture using a portion of the ILSRVC2012 data set
 Please see the ```AdversarialAttack.ipynb``` file and follow the ReadMe section.
+
+For information on the data set, please see this [google drive folder](https://drive.google.com/drive/folders/1MT8d6XPHdhThRe6z7gLagzXu1l3TnqbJ?usp=sharing).
